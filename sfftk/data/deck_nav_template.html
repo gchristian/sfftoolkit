@@ -1,0 +1,228 @@
+<html>
+
+<head>
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.css">
+
+    <script type="text/javascript" charset="utf8"
+        src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.js"></script>
+
+    <link rel="stylesheet" type="text/css"
+        href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css">
+    <!-- Select2 plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
+
+    <style>
+        .attack {
+            list-style-image: url(data/attack.png);
+        }
+
+        .health {
+            list-style-image: url(data/health.png);
+        }
+
+        .text1 {
+            list-style-image: url(data/lv1-icon.png);
+        }
+
+        .text2 {
+            list-style-image: url(data/lv2-icon.png);
+        }
+
+        .text3 {
+            list-style-image: url(data/lv3-icon.png);
+        }
+
+        .text4 {
+            list-style-image: url(data/lv4-icon.png);
+        }
+
+        .deckname {
+            font-size: .8em;
+        }
+
+        .rareness {
+            width: 60px;
+        }
+        .faction {
+            width: 60px;
+        }
+        .stat {
+            width: 60px;
+        }
+        .smallheader {
+            font-size: .75em;
+        }
+    </style>
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+
+            var table = $('#deckTable').DataTable({
+                paging: false,
+                initComplete: function () {
+                    count = 0;
+                    this.api().columns(".textbox").every(function () {
+                        var title = this.header();
+                        title = $(title).html();
+
+                        if (title.trim() == "Rarity" || title.trim() == "Faction"){
+                            var select = $('<input type="text" placeholder="' + title + '" data-index="' + this.index() + '" class = "rareness"/>')
+                            .appendTo($(this.footer()).empty());
+                        }
+                        else{
+                            var select = $('<input type="text" placeholder="' + title + '" data-index="' + this.index() + '" class = ""/>')
+                            .appendTo($(this.footer()).empty());
+                        }
+
+                        
+
+                        select.on('keyup', function () {
+                            table
+                                .column($(this).data('index'))
+                                .search(this.value)
+                                .draw();
+                        });
+
+                    })
+                    this.api().columns(".dropdown").every(function () {
+                        var title = this.header();
+                        //replace spaces with dashes
+                        title = $(title).html().trim();
+                        var column = this;
+
+                        if (title.trim() == "Rarity" || title.trim() == "Faction"){
+                            var select = $('<select id="' + title + '" class="select2 rareness"></select>').appendTo($(column.footer()).empty())
+                        }
+                        else{
+                            var select = $('<select id="' + title + '" class="select2" ></select>').appendTo($(column.footer()).empty())
+                        }                            
+                            select.on('change', function () {
+                                //Get the "text" property from each selected data 
+                                //regex escape the value and store in array
+                                var data = $.map($(this).select2('data'), function (value, key) {
+                                    return value.text ? '^' + $.fn.dataTable.util.escapeRegex(value.text) + '$' : null;
+                                });
+
+                                //if no data selected use ""
+                                if (data.length === 0) {
+                                    data = [""];
+                                }
+
+                                //join array into string with regex or (|)
+                                var val = data.join('|');
+
+                                //search for the option(s) selected
+                                column
+                                    .search(val ? val : '', true, false)
+                                    .draw();
+                            });
+                        if (title.trim() == "Faction" || title.trim() == "Rarity"){
+                            column.data().unique().sort().each(function (d, j) {
+                            var optionVal = d.split('<span style="display: none;">')[1];
+                                optionVal = optionVal.substring(0,optionVal.length-7);
+                                select.append('<option value="' + optionVal + '">' + optionVal + '</option>');
+                        });
+                        }
+                        else
+                        {
+                            column.data().unique().sort().each(function (d, j) {
+                            select.append('<option value="' + d + '">' + d + '</option>');
+                        });
+
+                        }
+
+
+                        //use column title as selector and placeholder
+                        $('#' + title).select2({
+                            multiple: true,
+                            closeOnSelect: false,
+                            placeholder: title
+                        });
+
+                        //initially clear select otherwise first option is selected
+                        $('.select2').val(null).trigger('change');
+                    });
+                }
+            });
+        });
+
+
+    </script>
+
+</head>
+
+<body>
+    <table id="deckTable">
+        <thead>
+            <tr>
+                <th class="dropdown smallheader">
+                    Faction
+                </th>
+                <th class="dropdown">
+                    Deck
+                </th>
+                <th class="dropdown rareness smallheader">
+                    Rarity
+                </th>
+                <th class="textbox">
+                    Name
+                </th>
+                <th class="dropdown">
+                    Type
+                </th>
+                <th class="dropdown">
+                    Subtype
+                </th>
+                <th class="stat">
+                    Attack
+                </th>
+                <th class="stat">
+                    Health
+                </th>
+                <th class="textbox">
+                    Text
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+[deck]
+        </tbody>
+        <tfoot>
+            <tr>
+                <th class="textbox">
+                    Faction
+                </th>
+                <th>
+                    Deck
+                </th>
+                <th class = "rareness">
+                    Rarity
+                </th>
+                <th>
+                    Name
+                </th>
+                <th>
+                    Type
+                </th>
+                <th>
+                    Subtype
+                </th>
+                <th>
+                    Attack
+                </th>
+                <th>
+                    Health
+                </th>
+                <th>
+                    Text
+                </th>
+            </tr>
+        </tfoot>
+    </table>
+</body>
+
+</html>
