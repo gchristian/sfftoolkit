@@ -19,7 +19,7 @@ To do:
 - Provide options for configuring deck navigator
 - Create single card images and 3 up horizontally
 - Import json from local source
-- do we want to put something on body of divider?
+- do we want to put something on body of divider? No
 
 I haven’t done GUI development in over a decade, and used this project as an excuse to learn how to do it in a cross platform way with python (in a previous life I was rather proficient in Obj-C/Cocoa but nowadays I mostly do backend stuff and in python). Sp its a mix of coding conventions and i'll try to get around to normalizing it at some point. Since its wxWidgets based it might be best to use there naming conventions, but thats going to be a bit of an adjustment for me.
 
