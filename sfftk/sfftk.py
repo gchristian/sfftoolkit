@@ -76,7 +76,7 @@ class SFFTK(sfftkPanel):
 					if response_content["id"] == user_provided_id:
 						if self.collection.addDeckFromJSON(response_content):
 							self.deckListCtrl.InsertItems([response_content["name"]],0)
-							created = wx.MessageDialog(self, response_content["name"] + " has been downloaded with " + "user_provided_id", caption="Deck Downloaded")
+							created = wx.MessageDialog(self, response_content["name"] + " has been downloaded with " + user_provided_id, caption="Deck Downloaded")
 							created.ShowModal()
 							return
 				failed = wx.MessageDialog(self, "Response from server is not what we expected. " + r.content.decode("utf-8") , caption="Failed to add Deck")
