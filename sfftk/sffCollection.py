@@ -86,8 +86,13 @@ class sffCollection(object):
 		
 		return False
 	
-	def drawCard(self, sfdiv, height, page_position, deckname, faction, rarities, spellCount):
-
+	def drawCard(self, sfdiv, height, page_position, deck):
+		deckname = deck.get("name")
+		faction = deck.get("faction")
+		rarities = deck["rarities"]
+		spellCount = deck.get("spellCount",0)
+		creatureTypes = deck.get("creatureTypes",[])
+				
 		div_width = 3.5 * inch
 		div_height = height * inch
 
@@ -119,6 +124,18 @@ class sffCollection(object):
 		for rarity in rarities:
 			sfdiv.drawImage(rarity, (left_margin - (inch * .3)) + (rarityCount * .15 * inch)  + (col * div_width), top_margin + (row * div_height) + (.18* inch), preserveAspectRatio=True, mask="auto",height=.15*inch)
 			rarityCount = rarityCount + 1
+		creatureCount = 1
+
+		creatureString = ""
+		for creature in sorted(creatureTypes.keys()):
+			creatureString = creatureString + " " + creature + ": " + str(creatureTypes[creature])
+		
+		sfdiv.drawString((inch * .3) + left_margin + (col * div_width), (inch * .14 * creatureCount) + top_margin + (row * div_height) + (.3* inch),creatureString)
+
+		# creature types in body
+		#for creature in creatureTypes.keys():
+		#	sfdiv.drawString((inch * .3) + left_margin + (col * div_width), (inch * .14 * creatureCount) + top_margin + (row * div_height) + (.3* inch),creature + ": " + str(creatureTypes[creature]))
+		#	creatureCount = creatureCount + 1
 
 		if page_position == 0:
 			sfdiv.showPage()
@@ -142,6 +159,13 @@ class sffCollection(object):
 				card = deck["cards"][str(cardCount)]
 				if card.get("cardType") == "Spell":
 					spellCount = spellCount + 1
+				if card.get("cardType") == "Creature":
+					for subType in card.get("cardSubType","").split(" "):
+						if subType in creatureTypes:
+							creatureTypes[subType] = creatureTypes[subType] + 1
+						else:
+							creatureTypes[subType] = 1
+
 				if "crossFaction" in card:
 					rarities.append(self.faction_icons.get(card.get("crossFaction"),""))
 				if card.get("rarity","") in self.rarity_icons:
@@ -149,6 +173,7 @@ class sffCollection(object):
 
 			deck["rarities"] = rarities
 			deck["spellCount"] = spellCount
+			deck["creatureTypes"] = creatureTypes
 			
 		decksSorted = sorted(self.decks, key=itemgetter('name'))
 
@@ -168,7 +193,7 @@ class sffCollection(object):
 				self.drawCard(sfdiv,height,deckCount % 6, deck.get("faction"),deck.get("faction"),[],0)
 				deckCount = deckCount + 1
 			
-			self.drawCard(sfdiv,height,deckCount % 6, deck.get("name"),deck.get("faction"),deck["rarities"],deck.get("spellCount",0))
+			self.drawCard(sfdiv,height,deckCount % 6, deck)
 
 			#print(json.dumps(deck, indent = 4, sort_keys=True))
 
