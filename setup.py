@@ -9,7 +9,7 @@ import sys
 if sys.platform == "win32":
     #windows
     setup(name='sfftoolkit',
-      version='0.1',
+      version='0.2',
       description='Tools to pull data from Solforge Fusion Website and make stuff with it.',
       url='na',
       author='gchristian',
@@ -32,8 +32,8 @@ elif sys.platform == 'darwin':
         'packages': ['wx', 'requests','reportlab'],
         'plist': {
             'CFBundleName': 'SFFToolKit',
-            'CFBundleShortVersionString':'0.0.1', # must be in X.X.X format
-            'CFBundleVersion': '0.0.1',
+            'CFBundleShortVersionString':'0.2.0', # must be in X.X.X format
+            'CFBundleVersion': '0.2.0',
             'CFBundleIdentifier':'com.extraneous.sfftoolkit', 
             'NSHumanReadableCopyright': '@ Gorman Christian 2022',
             }   
@@ -47,7 +47,7 @@ elif sys.platform == 'darwin':
 else:
     #unix/linux
     setup(name='sfftoolkit',
-      version='0.1',
+      version='0.2',
       description='Tools to pull data from Solforge Fusion Website and make stuff with it.',
       url='na',
       author='gchristian',
