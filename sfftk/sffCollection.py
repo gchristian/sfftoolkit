@@ -91,8 +91,8 @@ class sffCollection(object):
 		faction = deck.get("faction")
 		rarities = deck["rarities"]
 		spellCount = deck.get("spellCount",0)
-		creatureTypes = deck.get("creatureTypes",[])
-				
+		creatureTypes =deck.get("creatureTypes",[])
+
 		div_width = 3.5 * inch
 		div_height = height * inch
 
@@ -126,17 +126,10 @@ class sffCollection(object):
 			rarityCount = rarityCount + 1
 		creatureCount = 1
 
-		creatureString = ""
-		for creature in sorted(creatureTypes.keys()):
-			creatureString = creatureString + " " + creature + ": " + str(creatureTypes[creature])
-		
-		sfdiv.drawString((inch * .3) + left_margin + (col * div_width), (inch * .14 * creatureCount) + top_margin + (row * div_height) + (.3* inch),creatureString)
-
-		# creature types in body
-		#for creature in creatureTypes.keys():
-		#	sfdiv.drawString((inch * .3) + left_margin + (col * div_width), (inch * .14 * creatureCount) + top_margin + (row * div_height) + (.3* inch),creature + ": " + str(creatureTypes[creature]))
-		#	creatureCount = creatureCount + 1
-
+		for creature in creatureTypes.keys():
+			sfdiv.drawString((inch * .3) + left_margin + (col * div_width), (inch * .14 * creatureCount) + top_margin + (row * div_height) + (.3* inch),creature + ": " + str(creatureTypes[creature]))
+			creatureCount = creatureCount + 1
+			
 		if page_position == 0:
 			sfdiv.showPage()
 
@@ -190,7 +183,14 @@ class sffCollection(object):
 
 			if currentFaction != deck.get("faction") and factionDividers:
 				currentFaction = deck.get("faction")
-				self.drawCard(sfdiv,height,deckCount % 6, deck.get("faction"),deck.get("faction"),[],0)
+
+				self.drawCard(sfdiv,height,deckCount % 6, {
+					"name" : currentFaction,
+					"faction" : currentFaction,
+					"rarities" : [],
+					"spellCount" : 0,
+					"creatureTypes" : {}
+				})
 				deckCount = deckCount + 1
 			
 			self.drawCard(sfdiv,height,deckCount % 6, deck)
