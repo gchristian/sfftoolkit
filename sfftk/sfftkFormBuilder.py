@@ -122,6 +122,11 @@ class sfftkPanel ( wx.Panel ):
 		self.factionSeperatorCheckbox = wx.CheckBox( self.SFFDividerPage, wx.ID_ANY, u"Include Faction Seperators", wx.DefaultPosition, wx.DefaultSize, 0 )
 		diviederMainSizer.Add( self.factionSeperatorCheckbox, 0, wx.ALL, 5 )
 
+		layoutChoiceCtrlChoices = [ u"Tab: Name, Rarity, Spells; Body: Creatures", u"Tab: Name, Rarity, Spell, Creatures", u"Tab: Name, Spell, Creatures" ]
+		self.layoutChoiceCtrl = wx.Choice( self.SFFDividerPage, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, layoutChoiceCtrlChoices, 0 )
+		self.layoutChoiceCtrl.SetSelection( 0 )
+		diviederMainSizer.Add( self.layoutChoiceCtrl, 0, wx.ALL, 5 )
+
 		divSortCtrlChoices = [ u"Sort by Faction then Deck", u"Sort by Deck" ]
 		self.divSortCtrl = wx.Choice( self.SFFDividerPage, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, divSortCtrlChoices, 0 )
 		self.divSortCtrl.SetSelection( 0 )

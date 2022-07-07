@@ -145,7 +145,12 @@ class SFFTK(sfftkPanel):
 			if "pdf" not in pathlib.Path(saveAsPath).suffix:
 				saveAsPath = saveAsPath + ".pdf"
 
-			self.collection.renderDividerPDF(saveAsPath,self.heightCtrl.Value,self.factionSeperatorCheckbox.Value,sort=self.divSortCtrl.GetSelection())
+			self.collection.renderDividerPDF(saveAsPath,
+											self.heightCtrl.Value,
+											self.factionSeperatorCheckbox.Value,
+											sort=self.divSortCtrl.GetSelection(),
+											layout=self.layoutChoiceCtrl.GetSelection()
+											)
 
 
 	def createDeckNavigator( self, event ):

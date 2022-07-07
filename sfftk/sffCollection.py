@@ -86,7 +86,7 @@ class sffCollection(object):
 		
 		return False
 	
-	def drawCard(self, sfdiv, height, page_position, deck):
+	def drawCard(self, sfdiv, height, page_position, deck, layout=0):
 		deckname = deck.get("name")
 		faction = deck.get("faction")
 		rarities = deck["rarities"]
@@ -112,30 +112,71 @@ class sffCollection(object):
 
 		faction_icon = self.faction_icons.get(faction,"")
 
-		sfdiv.rect(left_margin + (col * div_width), top_margin + (row * div_height), div_width, div_height, stroke=1, fill=0)
-		sfdiv.drawImage(faction_icon, (left_margin - (inch * .4))  + (col * div_width), top_margin + (row * div_height), preserveAspectRatio=True, mask="auto",height=.35*inch)
-		sfdiv.setFont("Times-Roman", 12)
-		#canvas.setFillColor(red)
-		sfdiv.drawString((inch * .3) + left_margin + (col * div_width), (inch * .14) + top_margin + (row * div_height),deckname)
-		sfdiv.setFont("Times-Roman", 8)
-		if spellCount > 0:
-			sfdiv.drawString((inch * .31) + left_margin + (col * div_width) + (2.7 * inch), (inch * .28) + top_margin + (row * div_height),"Spells: " + str(spellCount))
-		rarityCount = 1
-		for rarity in rarities:
-			sfdiv.drawImage(rarity, (left_margin - (inch * .3)) + (rarityCount * .15 * inch)  + (col * div_width), top_margin + (row * div_height) + (.18* inch), preserveAspectRatio=True, mask="auto",height=.15*inch)
-			rarityCount = rarityCount + 1
-		creatureCount = 1
+		if layout == 0:
+			sfdiv.rect(left_margin + (col * div_width), top_margin + (row * div_height), div_width, div_height, stroke=1, fill=0)
+			sfdiv.drawImage(faction_icon, (left_margin - (inch * .4))  + (col * div_width), top_margin + (row * div_height), preserveAspectRatio=True, mask="auto",height=.35*inch)
+			sfdiv.setFont("Times-Roman", 12)
+			#canvas.setFillColor(red)
+			sfdiv.drawString((inch * .3) + left_margin + (col * div_width), (inch * .14) + top_margin + (row * div_height),deckname)
+			sfdiv.setFont("Times-Roman", 8)
+			if spellCount > 0:
+				sfdiv.drawString((inch * .31) + left_margin + (col * div_width) + (2.7 * inch), (inch * .28) + top_margin + (row * div_height),"Spells: " + str(spellCount))
+			rarityCount = 1
+			for rarity in rarities:
+				sfdiv.drawImage(rarity, (left_margin - (inch * .3)) + (rarityCount * .15 * inch)  + (col * div_width), top_margin + (row * div_height) + (.18* inch), preserveAspectRatio=True, mask="auto",height=.15*inch)
+				rarityCount = rarityCount + 1
 
-		for creature in creatureTypes.keys():
-			sfdiv.drawString((inch * .3) + left_margin + (col * div_width), (inch * .14 * creatureCount) + top_margin + (row * div_height) + (.3* inch),creature + ": " + str(creatureTypes[creature]))
-			creatureCount = creatureCount + 1
+			creatureCount = 1
+			for creature in creatureTypes.keys():
+				sfdiv.drawString((inch * .3) + left_margin + (col * div_width), (inch * .14 * creatureCount) + top_margin + (row * div_height) + (.3* inch),creature + ": " + str(creatureTypes[creature]))
+				creatureCount = creatureCount + 1
+
+		elif layout == 1:
+			sfdiv.rect(left_margin + (col * div_width), top_margin + (row * div_height), div_width, div_height, stroke=1, fill=0)
+			sfdiv.drawImage(faction_icon, (left_margin - (inch * .4))  + (col * div_width), top_margin + (row * div_height), preserveAspectRatio=True, mask="auto",height=.30*inch)
+			sfdiv.setFont("Times-Roman", 11)
+			#canvas.setFillColor(red)
+			sfdiv.drawString((inch * .3) + left_margin + (col * div_width), (inch * .14) + top_margin + (row * div_height),deckname)
+			sfdiv.setFont("Times-Roman", 8)
+			if spellCount > 0:
+				sfdiv.drawString((inch * .31) + left_margin + (col * div_width) + (2.7 * inch), (inch * .23) + top_margin + (row * div_height),"Spells: " + str(spellCount))
+			rarityCount = 1
+			for rarity in rarities:
+				sfdiv.drawImage(rarity, (left_margin - (inch * .3)) + (rarityCount * .1 * inch)  + (col * div_width), top_margin + (row * div_height) + (.165* inch), preserveAspectRatio=True, mask="auto",height=.1*inch)
+				rarityCount = rarityCount + 1
+
+			creatureCount = 1
+			sfdiv.setFont("Times-Roman", 7)
+			creatureString = ""
+			for creature in sorted(creatureTypes.keys()):
+				creatureString = creatureString + " " + creature + ": " + str(creatureTypes[creature])
 			
+			sfdiv.drawString((inch * .3) + left_margin + (col * div_width), (inch * .12 * creatureCount) + top_margin + (row * div_height) + (.215* inch),creatureString)
+		elif layout == 2:
+			sfdiv.rect(left_margin + (col * div_width), top_margin + (row * div_height), div_width, div_height, stroke=1, fill=0)
+			sfdiv.drawImage(faction_icon, (left_margin - (inch * .4))  + (col * div_width), top_margin + (row * div_height), preserveAspectRatio=True, mask="auto",height=.30*inch)
+			sfdiv.setFont("Times-Roman", 11)
+			#canvas.setFillColor(red)
+			sfdiv.drawString((inch * .3) + left_margin + (col * div_width), (inch * .14) + top_margin + (row * div_height),deckname)
+			sfdiv.setFont("Times-Roman", 8)
+			if spellCount > 0:
+				sfdiv.drawString((inch * .31) + left_margin + (col * div_width) + (2.7 * inch), (inch * .14) + top_margin + (row * div_height),"Spells: " + str(spellCount))
+
+			creatureCount = 1
+			sfdiv.setFont("Times-Roman", 7)
+			creatureString = ""
+			for creature in sorted(creatureTypes.keys()):
+				creatureString = creatureString + " " + creature + ": " + str(creatureTypes[creature])
+			
+			sfdiv.drawString((inch * .3) + left_margin + (col * div_width), (inch * .12 * creatureCount) + top_margin + (row * div_height) + (.15* inch),creatureString)
+
+
 		if page_position == 0:
 			sfdiv.showPage()
 
 		
-	def renderDividerPDF(self,path,height=2.9,factionDividers=False,sort=0):
-
+	def renderDividerPDF(self,path,height=2.9,factionDividers=False,sort=0, layout=0):
+		
 		try:
 			sfdiv = canvas.Canvas(path, pagesize=letter, bottomup=0)
 		except IOError:
@@ -184,6 +225,10 @@ class sffCollection(object):
 			if currentFaction != deck.get("faction") and factionDividers:
 				currentFaction = deck.get("faction")
 
+				# 0 Name, rarities, spell cnt - creature counts on body
+				# 1 Name, rarities, spell cnt, types
+				# 2 Name, spell cnt, types
+
 				self.drawCard(sfdiv,height,deckCount % 6, {
 					"name" : currentFaction,
 					"faction" : currentFaction,
@@ -193,7 +238,7 @@ class sffCollection(object):
 				})
 				deckCount = deckCount + 1
 			
-			self.drawCard(sfdiv,height,deckCount % 6, deck)
+			self.drawCard(sfdiv,height,deckCount % 6, deck, layout)
 
 			#print(json.dumps(deck, indent = 4, sort_keys=True))
 
