@@ -166,8 +166,8 @@ class sffCollection(object):
 			if currentFaction != deck.get("faction") and factionDividers:
 				currentFaction = deck.get("faction")
 				self.drawCard(sfdiv,height,deckCount % 6, deck.get("faction"),deck.get("faction"),[],0)
-			else:
-				self.drawCard(sfdiv,height,deckCount % 6, deck.get("name"),deck.get("faction"),deck["rarities"],deck.get("spellCount",0))
+			
+			self.drawCard(sfdiv,height,deckCount % 6, deck.get("name"),deck.get("faction"),deck["rarities"],deck.get("spellCount",0))
 
 			#print(json.dumps(deck, indent = 4, sort_keys=True))
 
