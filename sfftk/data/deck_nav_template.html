@@ -47,14 +47,41 @@
         .rareness {
             width: 60px;
         }
+
         .faction {
             width: 60px;
         }
+
         .stat {
             width: 60px;
         }
+
         .smallheader {
             font-size: .75em;
+        }
+
+        .button {
+            font: bold 11px Arial;
+            text-decoration: none;
+            background-color: #EEEEEE;
+            color: #333333;
+            padding: 2px 6px 2px 6px;
+            border-top: 1px solid #CCCCCC;
+            border-right: 1px solid #333333;
+            border-bottom: 1px solid #333333;
+            border-left: 1px solid #CCCCCC;
+        }
+
+        .button_pressed {
+            font: 11px Arial;
+            text-decoration: none;
+            background-color: #9e9d9d;
+            color: #333333;
+            padding: 2px 6px 2px 6px;
+            border-top: 1px solid #CCCCCC;
+            border-right: 1px solid #333333;
+            border-bottom: 1px solid #333333;
+            border-left: 1px solid #CCCCCC;
         }
     </style>
     <script type="text/javascript">
@@ -64,21 +91,21 @@
             var table = $('#deckTable').DataTable({
                 paging: false,
                 initComplete: function () {
-                    count = 0;
+
                     this.api().columns(".textbox").every(function () {
                         var title = this.header();
                         title = $(title).html();
 
-                        if (title.trim() == "Rarity" || title.trim() == "Faction"){
+                        if (title.trim() == "Rarity" || title.trim() == "Faction") {
                             var select = $('<input type="text" placeholder="' + title + '" data-index="' + this.index() + '" class = "rareness"/>')
-                            .appendTo($(this.footer()).empty());
+                                .appendTo($(this.footer()).empty());
                         }
-                        else{
+                        else {
                             var select = $('<input type="text" placeholder="' + title + '" data-index="' + this.index() + '" class = ""/>')
-                            .appendTo($(this.footer()).empty());
+                                .appendTo($(this.footer()).empty());
                         }
 
-                        
+
 
                         select.on('keyup', function () {
                             table
@@ -94,44 +121,43 @@
                         title = $(title).html().trim();
                         var column = this;
 
-                        if (title.trim() == "Rarity" || title.trim() == "Faction"){
+                        if (title.trim() == "Rarity" || title.trim() == "Faction") {
                             var select = $('<select id="' + title + '" class="select2 rareness"></select>').appendTo($(column.footer()).empty())
                         }
-                        else{
+                        else {
                             var select = $('<select id="' + title + '" class="select2" ></select>').appendTo($(column.footer()).empty())
-                        }                            
-                            select.on('change', function () {
-                                //Get the "text" property from each selected data 
-                                //regex escape the value and store in array
-                                var data = $.map($(this).select2('data'), function (value, key) {
-                                    return value.text ? '^' + $.fn.dataTable.util.escapeRegex(value.text) + '$' : null;
-                                });
-
-                                //if no data selected use ""
-                                if (data.length === 0) {
-                                    data = [""];
-                                }
-
-                                //join array into string with regex or (|)
-                                var val = data.join('|');
-
-                                //search for the option(s) selected
-                                column
-                                    .search(val ? val : '', true, false)
-                                    .draw();
-                            });
-                        if (title.trim() == "Faction" || title.trim() == "Rarity"){
-                            column.data().unique().sort().each(function (d, j) {
-                            var optionVal = d.split('<span style="display: none;">')[1];
-                                optionVal = optionVal.substring(0,optionVal.length-7);
-                                select.append('<option value="' + optionVal + '">' + optionVal + '</option>');
-                        });
                         }
-                        else
-                        {
-                            column.data().unique().sort().each(function (d, j) {
-                            select.append('<option value="' + d + '">' + d + '</option>');
+                        select.on('change', function () {
+                            //Get the "text" property from each selected data 
+                            //regex escape the value and store in array
+                            var data = $.map($(this).select2('data'), function (value, key) {
+                                return value.text ? '^' + $.fn.dataTable.util.escapeRegex(value.text) + '$' : null;
+                            });
+
+                            //if no data selected use ""
+                            if (data.length === 0) {
+                                data = [""];
+                            }
+
+                            //join array into string with regex or (|)
+                            var val = data.join('|');
+
+                            //search for the option(s) selected
+                            column
+                                .search(val ? val : '', true, false)
+                                .draw();
                         });
+                        if (title.trim() == "Faction" || title.trim() == "Rarity") {
+                            column.data().unique().sort().each(function (d, j) {
+                                var optionVal = d.split('<span style="display: none;">')[1];
+                                optionVal = optionVal.substring(0, optionVal.length - 7);
+                                select.append('<option value="' + optionVal + '">' + optionVal + '</option>');
+                            });
+                        }
+                        else {
+                            column.data().unique().sort().each(function (d, j) {
+                                select.append('<option value="' + d + '">' + d + '</option>');
+                            });
 
                         }
 
@@ -146,6 +172,40 @@
                         //initially clear select otherwise first option is selected
                         $('.select2').val(null).trigger('change');
                     });
+
+                    count = 0;
+                    this.api().columns().every(function () {
+                        var title = this.header();
+                        title = $(title).html();
+
+                        $("#showColumns").append('<a class="toggle-vis button" data-column="' + count + '">' + title + '</a>')
+                        count = count + 1;
+
+
+                    });
+                }
+            });
+
+
+
+            $('a.toggle-vis').on('click', function (e) {
+                e.preventDefault();
+
+                // Get the column API object
+                var column = table.column($(this).attr('data-column'));
+
+                // Toggle the visibility
+                column.visible(!column.visible());
+
+                if (column.visible()){
+                    $(this).removeClass("button_pressed")
+                    $(this).addClass("button")
+                }
+                else
+                {
+                    $(this).removeClass("button")
+                    $(this).addClass("button_pressed")
+
                 }
             });
         });
@@ -156,6 +216,7 @@
 </head>
 
 <body>
+    <div id="showColumns">Toggle Column Visibility: </div>
     <table id="deckTable">
         <thead>
             <tr>
@@ -189,7 +250,7 @@
             </tr>
         </thead>
         <tbody>
-[deck]
+            [deck]
         </tbody>
         <tfoot>
             <tr>
@@ -199,7 +260,7 @@
                 <th>
                     Deck
                 </th>
-                <th class = "rareness">
+                <th class="rareness">
                     Rarity
                 </th>
                 <th>

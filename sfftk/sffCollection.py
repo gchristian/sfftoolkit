@@ -240,7 +240,6 @@ class sffCollection(object):
 			
 			self.drawCard(sfdiv,height,deckCount % 6, deck, layout)
 
-			#print(json.dumps(deck, indent = 4, sort_keys=True))
 
 
 		sfdiv.save()
@@ -362,6 +361,12 @@ class sffCollection(object):
 													deck["forgeborn"]["a4t"])
 
 			for card in cards:
+				if "crossFaction" in card:
+					rarityIcon = "<img src='data/" + self.faction_icons[card.get("crossFaction","")].rsplit('/', 1)[-1]+"' width='20' height='20'></img>"
+				else:
+					rarityIcon = ""
+				
+				rarityIcon = rarityIcon + "<img src='data/" + self.rarity_icons[card.get("rarity","")].rsplit('/', 1)[-1]+"' width='20' height='20'></img>"
 				if card["cardType"] == "Creature":
 					html = html + """<tr>
 					<td class = "faction">%s</td>
@@ -394,7 +399,7 @@ class sffCollection(object):
 									</tr>""" % (
 										"<img src='data/" + self.faction_icons[deck["faction"]].rsplit('/', 1)[-1]+"' width='20' height='20'></img><span style='display: none;'>"+deck["faction"]+"</span>",
 												deck["name"],
-										"<img src='data/" + self.rarity_icons[card.get("rarity","")].rsplit('/', 1)[-1]+"' width='20' height='20'></img><span style='display: none;'>"+card.get("rarity","")+"</span>",
+										rarityIcon + "<span style='display: none;'>"+card.get("rarity","")+"</span>",
 													card["title"],
 													card["cardType"],
 													card["cardSubType"],
@@ -428,7 +433,7 @@ class sffCollection(object):
 										</td>
 									</tr>""" % ("<img src='data/" + self.faction_icons[deck["faction"]].rsplit('/', 1)[-1]+"' width='20' height='20'></img><span style='display: none;'>"+deck["faction"]+"</span>",
 											deck["name"],
-										"<img src='data/" + self.rarity_icons[card.get("rarity","")].rsplit('/', 1)[-1]+"' width='20' height='20'></img><span style='display: none;'>"+card.get("rarity","")+"</span>",
+										rarityIcon + "<span style='display: none;'>"+card.get("rarity","")+"</span>",
 													card["title"],
 													card["cardType"],
 													card["levels"]["1"].get("text",""),
@@ -436,9 +441,118 @@ class sffCollection(object):
 													card["levels"]["3"].get("text","")
 													)
 
-		with open(os.path.join(out_path,"index.html"), "w") as deck_navigator_file:
+		with open(os.path.join(out_path,"browse.html"), "w") as deck_navigator_file:
 			deck_navigator_file.write(html)
 			deck_navigator_file.write(template.split("[deck]")[1])
-		
-		shutil.copytree(self.resourcePath, os.path.join(out_path,"data"),ignore=shutil.ignore_patterns('*.html', '*.ico'))
+		if os.path.isdir(os.path.join(out_path,"data")) == False:
+			shutil.copytree(self.resourcePath, os.path.join(out_path,"data"),ignore=shutil.ignore_patterns('*.html', '*.ico'))
+
+		self.generateDeckOverview(out_path)
 			
+
+	def generateDeckOverview(self, out_path):
+		template_file = ""
+
+		with open(os.path.join(self.resourcePath,"deck_overview_template.html"), "r") as template_file:
+			template = template_file.read()
+
+		html = template.split("[decks]")[0]
+
+
+		for deck in self.decks:
+
+			cards = sorted(deck["cards"].values(), key=itemgetter('cardType'))
+			
+	
+
+			html = html + """
+			
+			<div id = "forgeborn">
+			<p> %s %s - %s</p>
+			<ol class = "fb">
+				<li class='text2'><strong>%s</strong> - %s</li>
+				<li class='text3'><strong>%s</strong> - %s</li>
+				<li class='text4'><strong>%s</strong> - %s</li>
+			</ol>""" %	("<img src='data/" + self.faction_icons[deck["faction"]].rsplit('/', 1)[-1]+"' width='15' height='15'></img>",
+					deck["name"],
+					deck["forgeborn"]["title"],
+					deck["forgeborn"]["a2n"],
+					deck["forgeborn"]["a2t"],
+					deck["forgeborn"]["a3n"],
+					deck["forgeborn"]["a3t"],
+					deck["forgeborn"]["a4n"],
+					deck["forgeborn"]["a4t"])
+
+
+			html = html + "</div>"
+			creatureTable = "<table>"
+			spellTable = "<table>"
+
+			for card in cards:
+				if "crossFaction" in card:
+					rarityIcon = "<img src='data/" + self.faction_icons[card.get("crossFaction","")].rsplit('/', 1)[-1]+"' width='20' height='20'></img>"
+				else:
+					rarityIcon = ""
+				
+				rarityIcon = rarityIcon + "<img src='data/" + self.rarity_icons[card.get("rarity","")].rsplit('/', 1)[-1]+"' width='20' height='20'></img>"
+				if card["cardType"] == "Creature":
+					creatureTable = creatureTable + """<tr>
+										<td>%s %s<br>%s</td>
+										<td>
+											<ol>
+												<li class='attack'>%s</li>
+												<li class='attack'>%s</li>
+												<li class='attack'>%s</li>
+											</ol>
+										</td>
+										<td>
+											<ol>
+												<li class='health'>%s</li>
+												<li class='health'>%s</li>
+												<li class='health'>%s</li>
+											</ol>
+										</td>
+										<td>
+											<ol>
+												<li class='text1'>%s</li>
+												<li class='text2'>%s</li>
+												<li class='text3'>%s</li>
+											</ol>
+										</td>
+									</tr>""" % (
+										
+										rarityIcon,
+													card["title"],
+													card["cardSubType"],
+													card["levels"]["1"].get("attack",""),
+													card["levels"]["2"].get("attack",""),
+													card["levels"]["3"].get("attack",""),
+													card["levels"]["1"].get("health",""),
+													card["levels"]["2"].get("health",""),
+													card["levels"]["3"].get("health",""),
+													card["levels"]["1"].get("text",""),
+													card["levels"]["2"].get("text",""),
+													card["levels"]["3"].get("text","")
+									)
+				
+				elif card["cardType"] == "Spell":
+					spellTable = spellTable + """<tr>
+										<td>%s %s</td>
+										<td>
+											<ol>
+												<li class='text1'>%s</li>
+												<li class='text2'>%s</li>
+												<li class='text3'>%s</li>
+											</ol>
+										</td>
+									</tr>""" % (rarityIcon,
+													card["title"],
+													card["levels"]["1"].get("text",""),
+													card["levels"]["2"].get("text",""),
+													card["levels"]["3"].get("text","")
+													)
+			html = html + creatureTable + "</table>"+ spellTable + "</table><div style='page-break-after: always'></div>"
+
+		with open(os.path.join(out_path,"overview.html"), "w") as deck_navigator_file:
+			deck_navigator_file.write(html)
+			deck_navigator_file.write(template.split("[decks]")[1])

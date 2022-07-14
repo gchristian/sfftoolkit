@@ -205,7 +205,7 @@ class sfftkPanel ( wx.Panel ):
 		self.SFFDeckNavigator.SetSizer( navigatorMainSizer )
 		self.SFFDeckNavigator.Layout()
 		navigatorMainSizer.Fit( self.SFFDeckNavigator )
-		self.sfftkTab.AddPage( self.SFFDeckNavigator, u"Deck Navigator", False )
+		self.sfftkTab.AddPage( self.SFFDeckNavigator, u"Browser / Summary", False )
 
 		decksMainSizer.Add( self.sfftkTab, 0, wx.EXPAND |wx.ALL, 5 )
 
