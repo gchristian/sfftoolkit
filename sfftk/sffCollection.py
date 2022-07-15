@@ -348,6 +348,8 @@ class sffCollection(object):
 			else:
 				imageBlock = ""
 
+			factionIcon = os.path.basename(self.faction_icons[deck["faction"]])
+
 			html = html + """<tr>
 										<td class = "faction">%s</td>
 										<td class = "deckname">%s</td>
@@ -366,7 +368,7 @@ class sffCollection(object):
 												<li class='text4'><strong>%s</strong> - %s</li>
 											</ol>
 										</td>
-									</tr>""" % ("<img src='data/" + self.faction_icons[deck["faction"]].rsplit('/', 1)[-1]+"' width='20' height='20'></img><span style='display: none;'>"+deck["faction"]+"</span>",
+									</tr>""" % ("<img src='data/" + factionIcon +"' width='20' height='20'></img><span style='display: none;'>"+deck["faction"]+"</span>",
 												deck["name"],
 									"<span style='display: none;'>Forgeborn</span>" + imageBlock,
 													deck["forgeborn"]["title"],
@@ -379,11 +381,11 @@ class sffCollection(object):
 
 			for card in cards:
 				if "crossFaction" in card:
-					rarityIcon = "<img src='data/" + self.faction_icons[card.get("crossFaction","")].rsplit('/', 1)[-1]+"' width='20' height='20'></img>"
+					rarityIcon = "<img src='data/" + os.path.basename(self.faction_icons[card.get("crossFaction","")]) +"' width='20' height='20'></img>"
 				else:
 					rarityIcon = ""
 				
-				rarityIcon = rarityIcon + "<img src='data/" + self.rarity_icons[card.get("rarity","")].rsplit('/', 1)[-1]+"' width='20' height='20'></img>"
+				rarityIcon = rarityIcon + "<img src='data/" + os.path.basename(self.rarity_icons[card.get("rarity","")]) +"' width='20' height='20'></img>"
 
 				if images:
 					imageBlock = """<span class="has-hover-card">
@@ -429,7 +431,7 @@ class sffCollection(object):
 											</ol>
 										</td>
 									</tr>""" % (
-										"<img src='data/" + self.faction_icons[deck["faction"]].rsplit('/', 1)[-1]+"' width='20' height='20'></img><span style='display: none;'>"+deck["faction"]+"</span>",
+										"<img src='data/" + factionIcon + "' width='20' height='20'></img><span style='display: none;'>"+deck["faction"]+"</span>",
 												deck["name"],
 										"<span style='display: none;'>"+card.get("rarity","")+"</span>" + imageBlock,
 													card["title"],
@@ -463,7 +465,7 @@ class sffCollection(object):
 												<li class='text3'>%s</li>
 											</ol>
 										</td>
-									</tr>""" % ("<img src='data/" + self.faction_icons[deck["faction"]].rsplit('/', 1)[-1]+"' width='20' height='20'></img><span style='display: none;'>"+deck["faction"]+"</span>",
+									</tr>""" % ("<img src='data/" + factionIcon +"' width='20' height='20'></img><span style='display: none;'>"+deck["faction"]+"</span>",
 											deck["name"],
 										"<span style='display: none;'>"+card.get("rarity","")+"</span>" + imageBlock,
 													card["title"],
@@ -495,8 +497,9 @@ class sffCollection(object):
 		for deck in self.decks:
 
 			cards = sorted(deck["cards"].values(), key=itemgetter('cardType'))
-			
-	
+
+			factionIcon = os.path.basename(self.faction_icons[deck["faction"]])
+		
 
 			html = html + """
 			
@@ -506,7 +509,7 @@ class sffCollection(object):
 				<li class='text2'><strong>%s</strong> - %s</li>
 				<li class='text3'><strong>%s</strong> - %s</li>
 				<li class='text4'><strong>%s</strong> - %s</li>
-			</ol>""" %	("<img src='data/" + self.faction_icons[deck["faction"]].rsplit('/', 1)[-1]+"' width='15' height='15'></img>",
+			</ol>""" %	("<img src='data/" + factionIcon +"' width='15' height='15'></img>",
 					deck["name"],
 					deck["forgeborn"]["title"],
 					deck["forgeborn"]["a2n"],
@@ -523,11 +526,11 @@ class sffCollection(object):
 
 			for card in cards:
 				if "crossFaction" in card:
-					rarityIcon = "<img src='data/" + self.faction_icons[card.get("crossFaction","")].rsplit('/', 1)[-1]+"' width='20' height='20'></img>"
+					rarityIcon = "<img src='data/" + os.path.basename(self.faction_icons[card.get("crossFaction","")]) +"' width='20' height='20'></img>"
 				else:
 					rarityIcon = ""
 				
-				rarityIcon = rarityIcon + "<img src='data/" + self.rarity_icons[card.get("rarity","")].rsplit('/', 1)[-1]+"' width='20' height='20'></img>"
+				rarityIcon = rarityIcon + "<img src='data/" + factionIcon +"' width='20' height='20'></img>"
 				if card["cardType"] == "Creature":
 					creatureTable = creatureTable + """<tr>
 										<td>%s %s<br>%s</td>
