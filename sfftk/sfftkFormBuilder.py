@@ -150,45 +150,15 @@ class sfftkPanel ( wx.Panel ):
 		self.SFFDividerPage.Layout()
 		diviederMainSizer.Fit( self.SFFDividerPage )
 		self.sfftkTab.AddPage( self.SFFDividerPage, u"Dividers", True )
-		self.SFFCardImage = wx.Panel( self.sfftkTab, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		cardExtractorMainSizer = wx.BoxSizer( wx.VERTICAL )
-
-		cardExtractorFirstHSizer = wx.BoxSizer( wx.HORIZONTAL )
-
-		self.cardAllLvlVCtrl = wx.CheckBox( self.SFFCardImage, wx.ID_ANY, u"Lvl 1-3 V", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.cardAllLvlVCtrl.SetValue(True)
-		self.cardAllLvlVCtrl.Enable( False )
-
-		cardExtractorFirstHSizer.Add( self.cardAllLvlVCtrl, 0, wx.ALL, 5 )
-
-
-		cardExtractorMainSizer.Add( cardExtractorFirstHSizer, 0, wx.EXPAND, 5 )
-
-		cardNameCtrlChoices = [ u"Deck - Name", u"Faction - Deck - Name" ]
-		self.cardNameCtrl = wx.Choice( self.SFFCardImage, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, cardNameCtrlChoices, 0 )
-		self.cardNameCtrl.SetSelection( 0 )
-		cardExtractorMainSizer.Add( self.cardNameCtrl, 0, wx.ALL, 5 )
-
-		buttonHSizer1 = wx.BoxSizer( wx.HORIZONTAL )
-
-
-		buttonHSizer1.Add( ( 0, 0), 1, wx.EXPAND, 5 )
-
-		self.cardCreateBtn = wx.Button( self.SFFCardImage, wx.ID_ANY, u"Extract Cards", wx.DefaultPosition, wx.DefaultSize, 0 )
-
-		self.cardCreateBtn.SetBitmapPosition( wx.RIGHT )
-		buttonHSizer1.Add( self.cardCreateBtn, 0, wx.ALL, 5 )
-
-
-		cardExtractorMainSizer.Add( buttonHSizer1, 1, wx.EXPAND, 5 )
-
-
-		self.SFFCardImage.SetSizer( cardExtractorMainSizer )
-		self.SFFCardImage.Layout()
-		cardExtractorMainSizer.Fit( self.SFFCardImage )
-		self.sfftkTab.AddPage( self.SFFCardImage, u"Card Extractor", False )
 		self.SFFDeckNavigator = wx.Panel( self.sfftkTab, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		navigatorMainSizer = wx.BoxSizer( wx.VERTICAL )
+
+		self.overviewCtrl = wx.CheckBox( self.SFFDeckNavigator, wx.ID_ANY, u"Include Printable Deck Summaries", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.overviewCtrl.SetValue(True)
+		navigatorMainSizer.Add( self.overviewCtrl, 0, wx.ALL, 5 )
+
+		self.imagesCtrl = wx.CheckBox( self.SFFDeckNavigator, wx.ID_ANY, u"Include Card Images", wx.DefaultPosition, wx.DefaultSize, 0 )
+		navigatorMainSizer.Add( self.imagesCtrl, 0, wx.ALL, 5 )
 
 		buttonHSizer2 = wx.BoxSizer( wx.HORIZONTAL )
 
@@ -223,7 +193,6 @@ class sfftkPanel ( wx.Panel ):
 		self.addUserBtn.Bind( wx.EVT_BUTTON, self.addDecksForUser )
 		self.addDeckBtn.Bind( wx.EVT_BUTTON, self.addDeckByID )
 		self.createDivBtn.Bind( wx.EVT_BUTTON, self.createDividers )
-		self.cardCreateBtn.Bind( wx.EVT_BUTTON, self.extractCards )
 		self.deckNavBtn.Bind( wx.EVT_BUTTON, self.createDeckNavigator )
 
 	def __del__( self ):
@@ -238,9 +207,6 @@ class sfftkPanel ( wx.Panel ):
 		event.Skip()
 
 	def createDividers( self, event ):
-		event.Skip()
-
-	def extractCards( self, event ):
 		event.Skip()
 
 	def createDeckNavigator( self, event ):

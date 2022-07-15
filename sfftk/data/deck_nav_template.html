@@ -14,8 +14,25 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css">
     <!-- Select2 plugin -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
-
     <style>
+        .has-hover-card {
+            display: inline-block;
+            position: relative;
+        }
+     
+        .hover-card {
+            display: none;
+            background: #ddd;
+            border: 1px solid black;
+            padding: 10px;
+            position: absolute;
+            margin: 0 auto;
+            white-space: nowrap;
+        }
+     
+        .has-hover-card:hover .hover-card {
+            display: inline-block;
+        }
         .attack {
             list-style-image: url(data/attack.png);
         }
@@ -147,11 +164,16 @@
                                 .search(val ? val : '', true, false)
                                 .draw();
                         });
+                        lastOption = ""
                         if (title.trim() == "Faction" || title.trim() == "Rarity") {
+                            lastOption = ""
                             column.data().unique().sort().each(function (d, j) {
-                                var optionVal = d.split('<span style="display: none;">')[1];
-                                optionVal = optionVal.substring(0, optionVal.length - 7);
-                                select.append('<option value="' + optionVal + '">' + optionVal + '</option>');
+                                var optionVal = d.split('<span style="display: none;">')[1].split("</span>")[0];
+                                if (optionVal != lastOption)
+                                {
+                                    select.append('<option value="' + optionVal + '">' + optionVal + '</option>');
+                                    lastOption = optionVal
+                                }
                             });
                         }
                         else {

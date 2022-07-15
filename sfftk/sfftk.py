@@ -154,42 +154,40 @@ class SFFTK(sfftkPanel):
 
 
 	def createDeckNavigator( self, event ):
+		destination_path=""
 		with wx.DirDialog(self, "Select folder to create site in:",
                        style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dirDialog:
 
 			if dirDialog.ShowModal() == wx.ID_CANCEL:
 				return
 
-			self.collection.generateDeckNavigator(dirDialog.GetPath())
+			destination_path = dirDialog.GetPath()
 
-	def extractCards( self, event ):
-		with wx.DirDialog(self, "Select folder to create images in:",
-                       style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dirDialog:
 
-			if dirDialog.ShowModal() == wx.ID_CANCEL:
-				return
+		pDialog = wx.ProgressDialog("Extracting cards", "Downloading non-cached images", 100,
+				style=wx.PD_CAN_ABORT | wx.PD_ELAPSED_TIME)
+		pDialog.SetMinSize((600,-1))
 
-			pDialog = wx.ProgressDialog("Extracting cards", "Downloading non-cached images", 100,
-					style=wx.PD_CAN_ABORT | wx.PD_ELAPSED_TIME)
-			pDialog.SetMinSize((600,-1))
-			pDialog.ShowModal()
+		if self.imagesCtrl.Value:
+			self.downloadMissingAssets(pDialog=pDialog)
 
-			self.downloadMissingAssets()
-
-			print(self.cardNameCtrl.GetSelection())
-
-			self.collection.parseCardsFromDeckImages(dirDialog.GetPath(),pDialog=pDialog,nameSchema=self.cardNameCtrl.GetSelection())
+			self.collection.parseCardsFromDeckImages(destination_path,pDialog=pDialog)
 
 			pDialog.Destroy()
 
+		self.collection.generateDeckNavigator(destination_path,images=self.imagesCtrl.GetValue(),overview=self.overviewCtrl.GetValue())
 
 
-	def downloadMissingAssets(self):
+	def downloadMissingAssets(self, pDialog):
 
 		downloadTuples = self.collection.missingImages()
-		print(downloadTuples)
 
 		for dt in downloadTuples:
+			if pDialog:
+				if pDialog.WasCancelled():
+					return
+			if pDialog:
+				pDialog.Update(0,newmsg="Downloading " +  dt[0])
 			try:
 				response = requests.get(dt[0])
 				with open(dt[1], "wb") as file:

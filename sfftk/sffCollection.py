@@ -263,8 +263,13 @@ class sffCollection(object):
 			
 		return links
 
-	def parseCardsFromDeckImages(self,outfile, pDialog = None, nameSchema=1):
+	def parseCardsFromDeckImages(self,outfile, pDialog = None):
 		decknumber = 0
+
+		imagePath = os.path.join(outfile, "images")
+
+		Path(imagePath).mkdir(parents=True, exist_ok=True)
+
 		for deck in self.decks:
 			if pDialog:
 				if pDialog.WasCancelled():
@@ -272,6 +277,8 @@ class sffCollection(object):
 			decknumber = decknumber + 1
 			cardIncrement = int((90 / ((len(self.decks) * 12) + 1)) * 100)
 			cardnumber = 0
+			
+
 			while cardnumber < 10:
 				cardnumber = cardnumber + 1
 				with Image.open(os.path.join(self.cacheFolder,deck["imageUrl"].rsplit('/', 1)[-1])) as deck_image:
@@ -281,46 +288,37 @@ class sffCollection(object):
 					new_left = (cardnumber-1)*(width/10)
 					new_right = cardnumber*(width/10)
 
-					card_image = deck_image.crop((new_left,0,new_right,height))
+					levelnumber = 3
+					levelPath = 1
 
-					#if nameSchema == 0:
-					#	card_name = deck["cards"][str(cardnumber)]["title"] + ".jpg"
-					if nameSchema == 0:
-						card_name = deck["name"] + " - " + deck["cards"][str(cardnumber)]["title"] + ".jpg"
-					elif nameSchema == 1:
-						card_name = deck["faction"] + " - " + deck["name"] + " - " + deck["cards"][str(cardnumber)]["title"] + ".jpg"
+					while levelnumber >= 1:
+						new_height = levelnumber * (height/3)
+						card_image = deck_image.crop((new_left,(height/3) * (levelnumber-1),new_right,new_height))
+					
+						card_name = deck["name"] + " - " + deck["cards"][str(cardnumber)]["title"] + " - Lvl " +str(levelPath) + ".jpg"
 
-					card_image.save(os.path.join(outfile,card_name))
+						card_image.save(os.path.join(imagePath,card_name))
+						levelnumber = levelnumber - 1
+						levelPath = levelPath + 1
 
 			with Image.open(os.path.join(self.cacheFolder,deck["forgeborn"]["imageUrl"].rsplit('/', 1)[-1])) as fb_image:
 				if pDialog:
 					pDialog.Update(cardIncrement,newmsg="Extracting " + deck["name"] + " - " + deck["cards"][str(cardnumber)]["title"])
 
-			
-				#if nameSchema == 0:
-				#	card_name = "Forgeborn - " + deck["forgeborn"]["title"] + ".jpg"
-				if nameSchema == 0:
-					card_name = deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["title"] + ".jpg"
-				elif nameSchema == 1:
-					card_name = deck["faction"] + " - " + deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["title"] + ".jpg"
+				card_name = deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["title"] + ".jpg"
 				
-				fb_image.save(os.path.join(outfile,card_name))
+				fb_image.save(os.path.join(imagePath,card_name))
 
 
 			with Image.open(os.path.join(self.cacheFolder,deck["forgeborn"]["imageUrlBack"].rsplit('/', 1)[-1])) as fbBack:
 				if pDialog:
 					pDialog.Update(cardIncrement,newmsg="Extracting " + deck["name"] + " - " + deck["cards"][str(cardnumber)]["title"])
 
-				#if nameSchema == 0:
-			#		card_name = "Forgeborn - " + deck["forgeborn"]["title"] + " Back.jpg"
-				if nameSchema == 0:
-					card_name = deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["title"] + " Back.jpg"
-				elif nameSchema == 1:
-					card_name = deck["faction"] + " - " + deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["title"] + " Back.jpg"
+				card_name = deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["title"] + " Back.jpg"
 				
-				fbBack.save(os.path.join(outfile,card_name))
+				fbBack.save(os.path.join(imagePath,card_name))
 
-	def generateDeckNavigator(self, out_path):
+	def generateDeckNavigator(self, out_path, images=False, overview=True):
 		template_file = ""
 
 		with open(os.path.join(self.resourcePath,"deck_nav_template.html"), "r") as template_file:
@@ -330,6 +328,16 @@ class sffCollection(object):
 
 		for deck in self.decks:
 			cards = sorted(deck["cards"].values(), key=itemgetter('cardType'))
+
+			if images:
+				imageBlock = """<span class="has-hover-card">
+				<img src='data/forge.gif' width='20' height='20'></img>
+					<span class="hover-card">
+						<img src="%s" width="281" height="206.5"></img>
+					</span>
+					</span>""" % ("images/" + deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["title"] + ".jpg")
+			else:
+				imageBlock = ""
 
 			html = html + """<tr>
 										<td class = "faction">%s</td>
@@ -351,7 +359,7 @@ class sffCollection(object):
 										</td>
 									</tr>""" % ("<img src='data/" + self.faction_icons[deck["faction"]].rsplit('/', 1)[-1]+"' width='20' height='20'></img><span style='display: none;'>"+deck["faction"]+"</span>",
 												deck["name"],
-									"<span style='display: none;'>Forgeborn</span>",
+									"<span style='display: none;'>Forgeborn</span>" + imageBlock,
 													deck["forgeborn"]["title"],
 													deck["forgeborn"]["a2n"],
 													deck["forgeborn"]["a2t"],
@@ -367,6 +375,21 @@ class sffCollection(object):
 					rarityIcon = ""
 				
 				rarityIcon = rarityIcon + "<img src='data/" + self.rarity_icons[card.get("rarity","")].rsplit('/', 1)[-1]+"' width='20' height='20'></img>"
+
+				if images:
+					imageBlock = """<span class="has-hover-card">
+										%s
+           							<span class="hover-card">
+		   								<img src="images/%s" width="206.5" height="281"></img><img src="images/%s" width="206.5" height="281"></img><img src="images/%s"width="206.5" height="281"></img>
+           							</span>
+        						 </span>""" % (rarityIcon, deck["name"] + " - " + card["title"] + " - Lvl 1.jpg",
+								 deck["name"] + " - " + card["title"] + " - Lvl 2.jpg",
+								 deck["name"] + " - " + card["title"] + " - Lvl 3.jpg")
+				else:
+					imageBlock = rarityIcon
+
+				
+				
 				if card["cardType"] == "Creature":
 					html = html + """<tr>
 					<td class = "faction">%s</td>
@@ -399,7 +422,7 @@ class sffCollection(object):
 									</tr>""" % (
 										"<img src='data/" + self.faction_icons[deck["faction"]].rsplit('/', 1)[-1]+"' width='20' height='20'></img><span style='display: none;'>"+deck["faction"]+"</span>",
 												deck["name"],
-										rarityIcon + "<span style='display: none;'>"+card.get("rarity","")+"</span>",
+										"<span style='display: none;'>"+card.get("rarity","")+"</span>" + imageBlock,
 													card["title"],
 													card["cardType"],
 													card["cardSubType"],
@@ -433,7 +456,7 @@ class sffCollection(object):
 										</td>
 									</tr>""" % ("<img src='data/" + self.faction_icons[deck["faction"]].rsplit('/', 1)[-1]+"' width='20' height='20'></img><span style='display: none;'>"+deck["faction"]+"</span>",
 											deck["name"],
-										rarityIcon + "<span style='display: none;'>"+card.get("rarity","")+"</span>",
+										"<span style='display: none;'>"+card.get("rarity","")+"</span>" + imageBlock,
 													card["title"],
 													card["cardType"],
 													card["levels"]["1"].get("text",""),
@@ -447,7 +470,8 @@ class sffCollection(object):
 		if os.path.isdir(os.path.join(out_path,"data")) == False:
 			shutil.copytree(self.resourcePath, os.path.join(out_path,"data"),ignore=shutil.ignore_patterns('*.html', '*.ico'))
 
-		self.generateDeckOverview(out_path)
+		if overview:
+			self.generateDeckOverview(out_path)
 			
 
 	def generateDeckOverview(self, out_path):
