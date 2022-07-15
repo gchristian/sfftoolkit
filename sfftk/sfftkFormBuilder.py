@@ -76,15 +76,19 @@ class sfftkPanel ( wx.Panel ):
 
 		decksFirstHSizer = wx.BoxSizer( wx.HORIZONTAL )
 
-		self.userLbl = wx.StaticText( self.deckPage, wx.ID_ANY, u"SF User Name: ", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.userLbl = wx.StaticText( self.deckPage, wx.ID_ANY, u"SFF User Name: ", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.userLbl.Wrap( -1 )
 
 		decksFirstHSizer.Add( self.userLbl, 0, wx.ALL, 5 )
 
 		self.userCtrl = wx.TextCtrl( self.deckPage, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 240,-1 ), 0 )
+		self.userCtrl.SetToolTip( u"Username used on the solforgefusion.com website" )
+
 		decksFirstHSizer.Add( self.userCtrl, 0, wx.ALL, 5 )
 
 		self.ignoreCache = wx.CheckBox( self.deckPage, wx.ID_ANY, u"Overwite Cache", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.ignoreCache.SetToolTip( u"Ignore local copy of deck and download from server if you try to add an existing deck ID" )
+
 		decksFirstHSizer.Add( self.ignoreCache, 0, wx.ALL, 5 )
 
 
@@ -93,10 +97,17 @@ class sfftkPanel ( wx.Panel ):
 		mainSecondHSizer = wx.BoxSizer( wx.HORIZONTAL )
 
 		self.addUserBtn = wx.Button( self.deckPage, wx.ID_ANY, u"Add Decks for User", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.addUserBtn.SetToolTip( u"Using username above, pulls all half decks from solforgefusion.com website." )
+
 		mainSecondHSizer.Add( self.addUserBtn, 0, wx.ALL, 5 )
 
 		self.addDeckBtn = wx.Button( self.deckPage, wx.ID_ANY, u"Add Deck by ID", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.addDeckBtn.SetToolTip( u"Prompts for ID of a deck (the long string of charactors at the end of the URL when looking at a deck at solforgefusion.com)" )
+
 		mainSecondHSizer.Add( self.addDeckBtn, 0, wx.ALL, 5 )
+
+		self.deleteDeckBtn = wx.Button( self.deckPage, wx.ID_ANY, u"Delete Decks", wx.DefaultPosition, wx.DefaultSize, 0 )
+		mainSecondHSizer.Add( self.deleteDeckBtn, 0, wx.ALL, 5 )
 
 
 		decksMainSizer.Add( mainSecondHSizer, 0, wx.EXPAND, 5 )
@@ -114,12 +125,16 @@ class sfftkPanel ( wx.Panel ):
 
 		self.heightCtrl = wx.SpinCtrlDouble( self.SFFDividerPage, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.SP_ARROW_KEYS, 2.5, 3.3, 2.900000, 0.05 )
 		self.heightCtrl.SetDigits( 2 )
+		self.heightCtrl.SetToolTip( u"Height of the printed divider - can be a value between 2.5 and 3.3" )
+
 		dividerFirstHSizer.Add( self.heightCtrl, 0, wx.ALL, 5 )
 
 
 		diviederMainSizer.Add( dividerFirstHSizer, 0, wx.EXPAND, 5 )
 
 		self.factionSeperatorCheckbox = wx.CheckBox( self.SFFDividerPage, wx.ID_ANY, u"Include Faction Seperators", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.factionSeperatorCheckbox.SetToolTip( u"Includes an extra card with faction logo for each faction in list, use it for minions or to seperate factions in the box" )
+
 		diviederMainSizer.Add( self.factionSeperatorCheckbox, 0, wx.ALL, 5 )
 
 		layoutChoiceCtrlChoices = [ u"Tab: Name, Rarity, Spells; Body: Creatures", u"Tab: Name, Rarity, Spell, Creatures", u"Tab: Name, Spell, Creatures" ]
@@ -192,6 +207,7 @@ class sfftkPanel ( wx.Panel ):
 		# Connect Events
 		self.addUserBtn.Bind( wx.EVT_BUTTON, self.addDecksForUser )
 		self.addDeckBtn.Bind( wx.EVT_BUTTON, self.addDeckByID )
+		self.deleteDeckBtn.Bind( wx.EVT_BUTTON, self.deleteSelectedDecks )
 		self.createDivBtn.Bind( wx.EVT_BUTTON, self.createDividers )
 		self.deckNavBtn.Bind( wx.EVT_BUTTON, self.createDeckNavigator )
 
@@ -204,6 +220,9 @@ class sfftkPanel ( wx.Panel ):
 		event.Skip()
 
 	def addDeckByID( self, event ):
+		event.Skip()
+
+	def deleteSelectedDecks( self, event ):
 		event.Skip()
 
 	def createDividers( self, event ):

@@ -85,6 +85,13 @@ class sffCollection(object):
 			return True
 		
 		return False
+
+	def removeDeckByName(self, nameofdeck):
+		for deck in self.decks:
+			if deck["name"] == nameofdeck:
+				for file in Path(self.cacheFolder).glob(deck["id"] + "*"):
+					file.unlink()
+				self.decks.remove(deck)
 	
 	def drawCard(self, sfdiv, height, page_position, deck, layout=0):
 		deckname = deck.get("name")

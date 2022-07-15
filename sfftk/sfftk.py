@@ -194,6 +194,12 @@ class SFFTK(sfftkPanel):
 					file.write(response.content)
 			except:
 				print("error downloading " + dt[0] + " to " + dt[1])
+	def deleteSelectedDecks( self, event ):
+		checkedDecks = self.deckListCtrl.GetCheckedItems()
+		while len(checkedDecks) > 0:
+			self.collection.removeDeckByName(self.deckListCtrl.GetCheckedStrings()[0])
+			self.deckListCtrl.Delete(checkedDecks[0])
+			checkedDecks = self.deckListCtrl.GetCheckedItems()
 
 
 class MainFrame(wx.Frame):
