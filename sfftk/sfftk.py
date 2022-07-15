@@ -39,7 +39,6 @@ class SFFTK(sfftkPanel):
 		
 
 	def addDeckByID( self, event ):
-
 		
 		user = self.userCtrl.Value
 		user_provided_id = None
@@ -194,6 +193,7 @@ class SFFTK(sfftkPanel):
 					file.write(response.content)
 			except:
 				print("error downloading " + dt[0] + " to " + dt[1])
+				
 	def deleteSelectedDecks( self, event ):
 		checkedDecks = self.deckListCtrl.GetCheckedItems()
 		while len(checkedDecks) > 0:

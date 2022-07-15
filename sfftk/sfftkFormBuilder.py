@@ -102,11 +102,13 @@ class sfftkPanel ( wx.Panel ):
 		mainSecondHSizer.Add( self.addUserBtn, 0, wx.ALL, 5 )
 
 		self.addDeckBtn = wx.Button( self.deckPage, wx.ID_ANY, u"Add Deck by ID", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.addDeckBtn.SetToolTip( u"Prompts for ID of a deck (the long string of charactors at the end of the URL when looking at a deck at solforgefusion.com)" )
+		self.addDeckBtn.SetToolTip( u"Prompts for ID of a deck (the long string of characters at the end of the URL when looking at a deck at solforgefusion.com)" )
 
 		mainSecondHSizer.Add( self.addDeckBtn, 0, wx.ALL, 5 )
 
 		self.deleteDeckBtn = wx.Button( self.deckPage, wx.ID_ANY, u"Delete Decks", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.deleteDeckBtn.SetToolTip( u"Removes checked decks above from local list of decks and cleans up cached data for them." )
+
 		mainSecondHSizer.Add( self.deleteDeckBtn, 0, wx.ALL, 5 )
 
 
@@ -139,7 +141,7 @@ class sfftkPanel ( wx.Panel ):
 
 		layoutChoiceCtrlChoices = [ u"Tab: Name, Rarity, Spells; Body: Creatures", u"Tab: Name, Rarity, Spell, Creatures", u"Tab: Name, Spell, Creatures" ]
 		self.layoutChoiceCtrl = wx.Choice( self.SFFDividerPage, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, layoutChoiceCtrlChoices, 0 )
-		self.layoutChoiceCtrl.SetSelection( 0 )
+		self.layoutChoiceCtrl.SetSelection( 1 )
 		diviederMainSizer.Add( self.layoutChoiceCtrl, 0, wx.ALL, 5 )
 
 		divSortCtrlChoices = [ u"Sort by Faction then Deck", u"Sort by Deck" ]

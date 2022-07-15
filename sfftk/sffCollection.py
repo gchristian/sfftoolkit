@@ -225,25 +225,27 @@ class sffCollection(object):
 		deckCount = 0
 
 		currentFaction = ""
+		factionsBuilt = []
 
 		for deck in decksSorted:
 			deckCount = deckCount + 1
 
 			if currentFaction != deck.get("faction") and factionDividers:
 				currentFaction = deck.get("faction")
+				if currentFaction not in factionsBuilt:
+					# 0 Name, rarities, spell cnt - creature counts on body
+					# 1 Name, rarities, spell cnt, types
+					# 2 Name, spell cnt, types
 
-				# 0 Name, rarities, spell cnt - creature counts on body
-				# 1 Name, rarities, spell cnt, types
-				# 2 Name, spell cnt, types
-
-				self.drawCard(sfdiv,height,deckCount % 6, {
-					"name" : currentFaction,
-					"faction" : currentFaction,
-					"rarities" : [],
-					"spellCount" : 0,
-					"creatureTypes" : {}
-				})
-				deckCount = deckCount + 1
+					self.drawCard(sfdiv,height,deckCount % 6, {
+						"name" : currentFaction,
+						"faction" : currentFaction,
+						"rarities" : [],
+						"spellCount" : 0,
+						"creatureTypes" : {}
+					})
+					factionsBuilt.append(currentFaction)
+					deckCount = deckCount + 1
 			
 			self.drawCard(sfdiv,height,deckCount % 6, deck, layout)
 
