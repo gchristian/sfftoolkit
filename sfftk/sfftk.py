@@ -245,7 +245,7 @@ class MainFrame(wx.Frame):
 	def showAbout(self, event):
 		aboutInfo = AboutDialogInfo()
 		aboutInfo.SetName("SFF Tool Kit")
-		aboutInfo.SetVersion("0.2")
+		aboutInfo.SetVersion("0.3")
 		aboutInfo.SetDescription("")
 		aboutInfo.SetCopyright("(C) 2022 Gorman Christian")
 		aboutInfo.SetWebSite("")
