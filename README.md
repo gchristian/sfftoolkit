@@ -18,7 +18,7 @@ To do:
 - Import json from local source
 - provide option for vertical dividers
 
-![Alt text](/screenshots/deck_browser.png?raw=true "Deck Browser")
+![Alt text](/screenshots/collection_browser.png?raw=true "Deck Browser")
 ![Alt text](/screenshots/deck_summary.png?raw=true "Deck Summary")
 ![Alt text](/screenshots/all_on_tab.png?raw=true "Divider Example")
 
