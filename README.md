@@ -18,9 +18,9 @@ To do:
 - Import json from local source
 - provide option for vertical dividers
 
+![Alt text](/screenshots/deck_browser.png?raw=true "Deck Browser")
+![Alt text](/screenshots/deck_summary.png?raw=true "Deck Summary")
 ![Alt text](/screenshots/all_on_tab.png?raw=true "Divider Example")
-![Alt text](/screenshots/deck_browser.png "Deck Browser")
-![Alt text](/screenshots/deck_summary?raw=true "Deck Summary")
 
 I haven’t done GUI development in over a decade, and used this project as an excuse to learn how to do it in a cross platform way with python (in a previous life I was rather proficient in Obj-C/Cocoa but nowadays I mostly do backend stuff and in python). So its a mix of coding conventions and i'll try to get around to normalizing it at some point. Since its wxWidgets based it might be best to use their naming conventions, but thats going to be a bit of an adjustment for me.
 
