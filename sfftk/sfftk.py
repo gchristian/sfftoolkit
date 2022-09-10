@@ -6,6 +6,8 @@ from sffCollection import sffCollection
 import requests
 import json
 import pathlib
+import os
+from urllib.parse import urlparse
 
 class SFFTK(sfftkPanel):
 
@@ -92,44 +94,89 @@ class SFFTK(sfftkPanel):
 		failed = wx.MessageDialog(self, "Unknown error. Check network is active and SolForge site is up. More info in logs.", caption="Failed to add Deck")
 		failed.ShowModal()
 
-	def addDecksForUser( self, event ):
-		user = self.userCtrl.Value
-	
+	def importJSONFromFolder( self, event ):
+		destination_path=""
+		with wx.DirDialog(self, "Select folder to import JSON from:",
+                       style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dirDialog:
 
-		if user == "":
-			failed = wx.MessageDialog(self, "You must populate your User name first.", caption="No User")
-			failed.ShowModal()
-			return
-			
-		headers={'Accept' : 'application/json','Content-Type': 'application/json'}
+			if dirDialog.ShowModal() == wx.ID_CANCEL:
+				return
 
-		r = requests.get("https://ul51g2rg42.execute-api.us-east-1.amazonaws.com/main/deck/?pageSize=100&inclCards=true&username="+user,
-						headers=headers)
-		try:
-			response_content = json.loads(r.content)
+			destination_path = dirDialog.GetPath()
+
 			decksAdded = 0
-			decksSkipped = 0
 			decksFailed = 0
 
-			if "Items" in response_content:
-				for item in response_content["Items"]:
-					if self.ignoreCache.IsChecked() == False:
-						if self.collection.containsDeck(item.get("id","")) == True:
-							decksSkipped = decksSkipped + 1
-							continue
-					if self.collection.addDeckFromJSON(item):
-						decksAdded = decksAdded + 1
-						self.deckListCtrl.InsertItems([item["name"]],0)
-					else:
+			headers={'Accept' : 'application/json','Content-Type': 'application/json'}
+
+			for file in os.listdir(destination_path):
+				if file.endswith(".json"):
+					try:						
+						with open(os.path.join(destination_path,file), 'r') as deck_file:
+							deck = json.load(deck_file)
+							if "ObjectStates" in deck:
+								deck_id = urlparse(list(deck["ObjectStates"][0]["CustomDeck"].values())[0]["FaceURL"]).path.rsplit("/", 1)[-1].split("-")[0]
+								r = requests.get("https://ul51g2rg42.execute-api.us-east-1.amazonaws.com/main/deck/"+deck_id+"?inclCards=true&inclUsers=true",
+														headers=headers)	
+								response_content = json.loads(r.content)
+								if "id" in response_content:
+									if response_content["id"] == deck_id:
+										if self.collection.addDeckFromJSON(response_content):
+											self.deckListCtrl.InsertItems([response_content["name"]],0)
+											decksAdded = decksAdded + 1
+							elif "id" in deck:
+								if self.collection.addDeckFromJSON(deck):
+									decksAdded = decksAdded + 1
+									self.deckListCtrl.InsertItems([deck["name"]],0)
+							else:
+								decksFailed = decksFailed + 1
+						
+					except Exception as e:
+						print(e)
 						decksFailed = decksFailed + 1
 
-				completed = wx.MessageDialog(self, "%i decks added\n %i decks skipped\n%i decks failed" % (decksAdded, decksSkipped, decksFailed), caption="Finished Processing User")
-				completed.ShowModal()
-			else:
-				failed = wx.MessageDialog(self, "Response from server not what we expected." + r.content.decode("utf-8") , caption="Failed Prcoessing User")
-				failed.ShowModal()
-		except Exception as e:
-			print(e)
+			completed = wx.MessageDialog(self, "%i decks added\n%i decks failed" % (decksAdded, decksFailed), caption="Finished Processing User")
+			completed.ShowModal()
+
+
+	# def addDecksForUser( self, event ):
+	# 	user = self.userCtrl.Value
+	
+
+	# 	if user == "":
+	# 		failed = wx.MessageDialog(self, "You must populate your User name first.", caption="No User")
+	# 		failed.ShowModal()
+	# 		return
+			
+	# 	headers={'Accept' : 'application/json','Content-Type': 'application/json'}
+
+	# 	r = requests.get("https://ul51g2rg42.execute-api.us-east-1.amazonaws.com/main/deck/?pageSize=100&inclCards=true&username="+user,
+	# 					headers=headers)
+	# 	try:
+	# 		response_content = json.loads(r.content)
+	# 		decksAdded = 0
+	# 		decksSkipped = 0
+	# 		decksFailed = 0
+
+	# 		if "Items" in response_content:
+	# 			for item in response_content["Items"]:
+	# 				if self.ignoreCache.IsChecked() == False:
+	# 					if self.collection.containsDeck(item.get("id","")) == True:
+	# 						decksSkipped = decksSkipped + 1
+	# 						continue
+	# 				if self.collection.addDeckFromJSON(item):
+	# 					decksAdded = decksAdded + 1
+	# 					self.deckListCtrl.InsertItems([item["name"]],0)
+	# 				else:
+	# 					decksFailed = decksFailed + 1
+
+	# 			completed = wx.MessageDialog(self, "%i decks added\n %i decks skipped\n%i decks failed" % (decksAdded, decksSkipped, decksFailed), caption="Finished Processing User")
+	# 			completed.ShowModal()
+	# 		else:
+	# 			failed = wx.MessageDialog(self, "Response from server not what we expected." + r.content.decode("utf-8") , caption="Failed Prcoessing User")
+	# 			failed.ShowModal()
+	# 	except Exception as e:
+	# 		print(e)
 
 	def createDividers( self, event ):
 
@@ -149,6 +196,22 @@ class SFFTK(sfftkPanel):
 											self.factionSeperatorCheckbox.Value,
 											sort=self.divSortCtrl.GetSelection(),
 											layout=self.layoutChoiceCtrl.GetSelection()
+											)
+
+
+	def createLabels( self, event ):
+		with wx.FileDialog(self, "Save divider PDF file as",
+                       style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,wildcard="PDF files (*.pdf)|*.pdf") as fileDialog:
+
+			if fileDialog.ShowModal() == wx.ID_CANCEL:
+				return
+
+			saveAsPath = fileDialog.GetPath()
+			
+			if "pdf" not in pathlib.Path(saveAsPath).suffix:
+				saveAsPath = saveAsPath + ".pdf"
+
+			self.collection.renderLabelPDF(saveAsPath
 											)
 
 

@@ -254,6 +254,144 @@ class sffCollection(object):
 		sfdiv.save()
 
 
+	def drawLabel(self, sfdiv, page_position, deck):
+
+		#67mm x 95.5mm x 22.5mm
+		#1 inch * 2.6378
+		#.1058 between stickers
+
+
+		deckname = deck.get("name")
+		faction = deck.get("faction")
+		rarities = deck["rarities"]
+		spellCount = deck.get("spellCount",0)
+		creatureTypes =deck.get("creatureTypes",[])
+		creatureNames = deck.get("creatureNames")
+
+		div_width = 2.6378 * inch
+		div_height = 1 * inch
+
+		left_margin = 0.1875 * inch
+		top_margin = .5 * inch
+
+		if page_position == 0:
+			row = 9
+			col = 0
+			box_margin = left_margin + (col * div_width)
+		else:
+			row = ceil(page_position / 3) - 1
+			col = page_position % 3
+			if col == 0:
+				col = 0
+				box_margin = left_margin + (col * div_width)
+			else:
+				box_margin = left_margin + (col * div_width)+(.1058 * inch * col)
+
+		faction_icon = self.faction_icons.get(faction,"")
+
+
+#		sfdiv.rect(box_margin, top_margin + (row * div_height), div_width, div_height, stroke=1, fill=0)
+		sfdiv.drawImage(faction_icon, (box_margin - (inch * .36)), top_margin + (row * div_height), preserveAspectRatio=True, mask="auto",height=.30*inch)
+		sfdiv.setFont("Times-Roman", 11)
+		#canvas.setFillColor(red)
+		sfdiv.drawString((inch * .3) + box_margin, (inch * .12) + top_margin + (row * div_height),deckname)
+
+		rarityCount = 1
+		for rarity in rarities:
+			sfdiv.drawImage(rarity, (box_margin - (inch * .26)) + (rarityCount * .1 * inch), top_margin + (row * div_height) + (.185* inch), preserveAspectRatio=True, mask="auto",height=.1*inch)
+			rarityCount = rarityCount + 1
+
+		sfdiv.setFont("Times-Roman", 8)
+		if spellCount > 0:
+			sfdiv.drawString(box_margin + (2.2 * inch), (inch * .10) + top_margin + (row * div_height) + (.15* inch),"Spells: " + str(spellCount))
+
+		creatureCount = 1
+		sfdiv.setFont("Times-Roman", 8)
+		creatureStringRow1 = ""
+		creatureStringRow2 = ""
+		for creature in sorted(creatureTypes.keys()):
+			if creatureCount < 5:
+				creatureStringRow1 = creatureStringRow1 + "(" + creature + ": " + str(creatureTypes[creature]) + ")   "
+			else:
+				creatureStringRow2 = creatureStringRow2 + "("  + creature + ": " + str(creatureTypes[creature]) + ")   " 
+
+			creatureCount = creatureCount + 1
+		
+		sfdiv.drawString((inch * .11) + box_margin, (inch * .10) + top_margin + (row * div_height) + (.3* inch),creatureStringRow1)
+		sfdiv.drawString((inch * .11) + box_margin, (inch * .10) + top_margin + (row * div_height) + (.42* inch),creatureStringRow2)
+
+
+		sfdiv.setFont("Times-Roman", 5)
+
+		creatureNames.sort(key=len)
+
+		creatureNameStringRow1 = "[" + creatureNames[4] + "]" + " [" + creatureNames[6] + "]" + " [" + creatureNames[8] + "]"
+		creatureNameStringRow2 = "[" + creatureNames[5] + "]" + " [" + creatureNames[7] + "]" + " [" + creatureNames[9] + "]"
+		creatureNameStringRow3 = "[" + creatureNames[0] + "]" + " [" + creatureNames[1] + "]" + " [" + creatureNames[2] + "]" + " [" + creatureNames[3] + "]"
+
+		sfdiv.drawString((inch * .11) + box_margin, (inch * .10) + top_margin + (row * div_height) + (.52* inch),creatureNameStringRow1)
+		sfdiv.drawString((inch * .11) + box_margin, (inch * .10) + top_margin + (row * div_height) + (.62* inch),creatureNameStringRow2)
+		sfdiv.drawString((inch * .11) + box_margin, (inch * .10) + top_margin + (row * div_height) + (.72* inch),creatureNameStringRow3)
+
+		if page_position == 0:
+			sfdiv.showPage()
+
+		
+	def renderLabelPDF(self,path):
+		
+		try:
+			sfdiv = canvas.Canvas(path, pagesize=letter, bottomup=0)
+		except IOError:
+			print("Cannot save PDF to '%s'." % path)
+
+		for deck in self.decks:
+			cardCount = 0
+			spellCount = 0
+			creatureTypes = {}
+			rarities = []
+			creatureNames = []
+
+			while cardCount < 10:
+				cardCount = cardCount + 1
+				card = deck["cards"][str(cardCount)]
+				if card.get("cardType") == "Spell":
+					spellCount = spellCount + 1
+				if card.get("cardType") == "Creature":
+					for subType in card.get("cardSubType","").split(" "):
+						if subType in creatureTypes:
+							creatureTypes[subType] = creatureTypes[subType] + 1
+						else:
+							creatureTypes[subType] = 1
+				creatureNames.append(card["title"])
+
+				if "crossFaction" in card:
+					rarities.append(self.faction_icons.get(card.get("crossFaction"),""))
+				if card.get("rarity","") in self.rarity_icons:
+					rarities.append(self.rarity_icons[card["rarity"]])
+
+			deck["rarities"] = rarities
+			deck["spellCount"] = spellCount
+			deck["creatureTypes"] = creatureTypes
+			deck["creatureNames"] = creatureNames
+			
+		decksSorted = sorted(self.decks, key=itemgetter('name'))
+
+		decksSorted = sorted(decksSorted, key=itemgetter('faction'))
+
+		deckCount = 0
+
+		#background =  os.path.join(self.resourcePath,"5160.png")
+		#sfdiv.drawImage(background,0,11)
+
+		for deck in decksSorted:
+			deckCount = deckCount + 1
+			
+			self.drawLabel(sfdiv,deckCount % 30, deck)
+
+
+		sfdiv.save()
+
+
 	def missingImages(self):
 		links = []
 		for deck in self.decks:
@@ -333,9 +471,98 @@ class sffCollection(object):
 		with open(os.path.join(self.resourcePath,"deck_nav_template.html"), "r") as template_file:
 			template = template_file.read()
 
+		Path(os.path.join(out_path,"decks")).mkdir(parents=True, exist_ok=True)
+
 		html = template.split("[deck]")[0]
+		index = """<html><body><h2>All Decks</h2><div><p>
+		<a href="browse.html">All decks, with filters.</a></p>
+		<p><a href="overview.html">All decks, one page summaries.</a></p></div>
+		<h2>Single Deck Card Browsers</h2><div>"""
+		
 
 		for deck in self.decks:
+			index = index + """<p><a href="%s">%s</a> | <a href="https://solforgefusion.com/decks/%s">official</a></p>""" % ("decks/" + deck["name"] + ".html",deck["name"],deck["id"].strip())
+			deckHtml = """<html><head>
+			<style>
+        .long_card {
+            display: inline-block;
+            position: relative;
+			max-width: 80%; 
+        }
+
+		.tall_card {
+            display: inline-block;
+            position: relative;
+			max-width: 80%; 
+        }
+		.slidecontainer {
+		width: 100%;
+		}
+
+		.slider {
+		-webkit-appearance: none;
+		width: 100%;
+		height: 25px;
+		background: #d3d3d3;
+		outline: none;
+		opacity: 0.7;
+		-webkit-transition: .2s;
+		transition: opacity .2s;
+		}
+
+		.slider:hover {
+		opacity: 1;
+		}
+
+		.slider::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 25px;
+		height: 25px;
+		background: #04AA6D;
+		cursor: pointer;
+		}
+
+		.slider::-moz-range-thumb {
+		width: 25px;
+		height: 25px;
+		background: #04AA6D;
+		cursor: pointer;
+		}
+		</style>
+			</head><body>
+			<h1>Adjust Card Size</h1>
+<div class="slidecontainer">
+  <input type="range" min="1" max="100" value="80" class="slider" id="cardSizer">
+  <p>Card Size: <span id="cardSizeSpan"></span></p>
+</div>
+
+<script>
+
+(function (scope) {
+    // Create a new stylesheet in the bottom
+    // of <head>, where the css rules will go
+    var style = document.createElement('style');
+    document.head.appendChild(style);
+    var stylesheet = style.sheet;
+    scope.css = function (selector, property, value) {
+        // Append the rule (Major browsers)
+        try { stylesheet.insertRule(selector+' {'+property+':'+value+'}', stylesheet.cssRules.length);
+        } catch(err) {try { stylesheet.addRule(selector, property+':'+value); // (pre IE9)
+        } catch(err) {console.log("Couldn't add style");}} // (alien browsers)
+    }
+})(window);
+
+var slider = document.getElementById("cardSizer");
+var output = document.getElementById("cardSizeSpan");
+output.innerHTML = slider.value;
+
+slider.oninput = function() {
+	css(".tall_card","max-width",this.value.toString() + "%")
+	css(".long_card","max-width",this.value.toString() + "%")
+  output.innerHTML = this.value;
+}
+</script>"""
 			cards = sorted(deck["cards"].values(), key=itemgetter('cardType'))
 
 			if images:
@@ -378,6 +605,14 @@ class sffCollection(object):
 													deck["forgeborn"]["a3t"],
 													deck["forgeborn"]["a4n"],
 													deck["forgeborn"]["a4t"])
+			
+			deckHtml = deckHtml + """<div class = "forgeborn_front">
+										<img src="../images/%s" class="long_card"></img>
+									</div>
+									<div class = "forgeborn_back">
+										<img src="../images/%s" class="tall_card"></img>
+									</div>""" % (deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["title"] + ".jpg",
+												deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["title"] + " Back.jpg")
 
 			for card in cards:
 				if "crossFaction" in card:
@@ -391,7 +626,7 @@ class sffCollection(object):
 					imageBlock = """<span class="has-hover-card">
 										%s
            							<span class="hover-card">
-		   								<img src="images/%s" width="206.5" height="281"></img><img src="images/%s" width="206.5" height="281"></img><img src="images/%s"width="206.5" height="281"></img>
+		   								<img src="images/%s" width="206.5" height="281"></img><img src="images-broken/%s" width="206.5" height="281"></img><img src="images/%s"width="206.5" height="281"></img>
            							</span>
         						 </span>""" % (rarityIcon, deck["name"] + " - " + card["title"] + " - Lvl 1.jpg",
 								 deck["name"] + " - " + card["title"] + " - Lvl 2.jpg",
@@ -399,7 +634,20 @@ class sffCollection(object):
 				else:
 					imageBlock = rarityIcon
 
-				
+				#min-width="336" min-height="240" 
+
+				deckHtml = deckHtml + """<div class = "lvl1">
+											<img src="../images/%s" class="tall_card"></img>
+										</div>
+										<div class = "lvl2">
+											<img src="../images/%s" class="tall_card"></img>
+										</div>
+										<div class = "lvl3">
+											<img src="../images/%s" class="tall_card"></img>
+										</div>""" % (deck["name"] + " - " + card["title"] + " - Lvl 1.jpg",
+									deck["name"] + " - " + card["title"] + " - Lvl 2.jpg",
+									deck["name"] + " - " + card["title"] + " - Lvl 3.jpg")
+
 				
 				if card["cardType"] == "Creature":
 					html = html + """<tr>
@@ -474,10 +722,17 @@ class sffCollection(object):
 													card["levels"]["2"].get("text",""),
 													card["levels"]["3"].get("text","")
 													)
+			deckHtml = deckHtml + "</body></html>"
+			with open(os.path.join(out_path,"decks/" + deck["name"] + ".html"), "w") as deck_file:
+				deck_file.write(deckHtml)
+		
+		index=index + "</div></body>"
 
 		with open(os.path.join(out_path,"browse.html"), "w") as deck_navigator_file:
 			deck_navigator_file.write(html)
 			deck_navigator_file.write(template.split("[deck]")[1])
+		with open(os.path.join(out_path,"index.html"), "w") as index_file:
+			index_file.write(index)
 		if os.path.isdir(os.path.join(out_path,"data")) == False:
 			shutil.copytree(self.resourcePath, os.path.join(out_path,"data"),ignore=shutil.ignore_patterns('*.html', '*.ico'))
 
@@ -530,7 +785,9 @@ class sffCollection(object):
 				else:
 					rarityIcon = ""
 				
-				rarityIcon = rarityIcon + "<img src='data/" + factionIcon +"' width='20' height='20'></img>"
+
+				rarityIcon = rarityIcon + "<img src='data/" + os.path.basename(self.rarity_icons[card.get("rarity","")]) +"' width='20' height='20'></img>"
+
 				if card["cardType"] == "Creature":
 					creatureTable = creatureTable + """<tr>
 										<td>%s %s<br>%s</td>

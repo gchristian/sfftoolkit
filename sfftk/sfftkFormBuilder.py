@@ -96,15 +96,15 @@ class sfftkPanel ( wx.Panel ):
 
 		mainSecondHSizer = wx.BoxSizer( wx.HORIZONTAL )
 
-		self.addUserBtn = wx.Button( self.deckPage, wx.ID_ANY, u"Add Decks for User", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.addUserBtn.SetToolTip( u"Using username above, pulls all half decks from solforgefusion.com website." )
-
-		mainSecondHSizer.Add( self.addUserBtn, 0, wx.ALL, 5 )
-
 		self.addDeckBtn = wx.Button( self.deckPage, wx.ID_ANY, u"Add Deck by ID", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.addDeckBtn.SetToolTip( u"Prompts for ID of a deck (the long string of characters at the end of the URL when looking at a deck at solforgefusion.com)" )
 
 		mainSecondHSizer.Add( self.addDeckBtn, 0, wx.ALL, 5 )
+
+		self.importJSONBtn = wx.Button( self.deckPage, wx.ID_ANY, u"Import JSON", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.importJSONBtn.SetToolTip( u"Using username above, pulls all half decks from solforgefusion.com website." )
+
+		mainSecondHSizer.Add( self.importJSONBtn, 0, wx.ALL, 5 )
 
 		self.deleteDeckBtn = wx.Button( self.deckPage, wx.ID_ANY, u"Delete Decks", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.deleteDeckBtn.SetToolTip( u"Removes checked decks above from local list of decks and cleans up cached data for them." )
@@ -167,6 +167,32 @@ class sfftkPanel ( wx.Panel ):
 		self.SFFDividerPage.Layout()
 		diviederMainSizer.Fit( self.SFFDividerPage )
 		self.sfftkTab.AddPage( self.SFFDividerPage, u"Dividers", True )
+		self.SFFLabels = wx.Panel( self.sfftkTab, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		labelMainSizer = wx.BoxSizer( wx.VERTICAL )
+
+		labelChoiceCtrlChoices = [ u"Top: Avery 5160" ]
+		self.labelChoiceCtrl = wx.Choice( self.SFFLabels, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, labelChoiceCtrlChoices, 0 )
+		self.labelChoiceCtrl.SetSelection( 0 )
+		labelMainSizer.Add( self.labelChoiceCtrl, 0, wx.ALL, 5 )
+
+		buttonLabelHSizer = wx.BoxSizer( wx.HORIZONTAL )
+
+
+		buttonLabelHSizer.Add( ( 0, 0), 1, wx.EXPAND, 5 )
+
+		self.createLabelBtn = wx.Button( self.SFFLabels, wx.ID_ANY, u"Create", wx.DefaultPosition, wx.DefaultSize, 0 )
+
+		self.createLabelBtn.SetBitmapPosition( wx.RIGHT )
+		buttonLabelHSizer.Add( self.createLabelBtn, 0, wx.ALL, 5 )
+
+
+		labelMainSizer.Add( buttonLabelHSizer, 1, wx.EXPAND, 5 )
+
+
+		self.SFFLabels.SetSizer( labelMainSizer )
+		self.SFFLabels.Layout()
+		labelMainSizer.Fit( self.SFFLabels )
+		self.sfftkTab.AddPage( self.SFFLabels, u"Labels", False )
 		self.SFFDeckNavigator = wx.Panel( self.sfftkTab, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		navigatorMainSizer = wx.BoxSizer( wx.VERTICAL )
 
@@ -175,6 +201,7 @@ class sfftkPanel ( wx.Panel ):
 		navigatorMainSizer.Add( self.overviewCtrl, 0, wx.ALL, 5 )
 
 		self.imagesCtrl = wx.CheckBox( self.SFFDeckNavigator, wx.ID_ANY, u"Include Card Images", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.imagesCtrl.SetValue(True)
 		navigatorMainSizer.Add( self.imagesCtrl, 0, wx.ALL, 5 )
 
 		buttonHSizer2 = wx.BoxSizer( wx.HORIZONTAL )
@@ -207,10 +234,11 @@ class sfftkPanel ( wx.Panel ):
 		self.Layout()
 
 		# Connect Events
-		self.addUserBtn.Bind( wx.EVT_BUTTON, self.addDecksForUser )
 		self.addDeckBtn.Bind( wx.EVT_BUTTON, self.addDeckByID )
+		self.importJSONBtn.Bind( wx.EVT_BUTTON, self.importJSONFromFolder )
 		self.deleteDeckBtn.Bind( wx.EVT_BUTTON, self.deleteSelectedDecks )
 		self.createDivBtn.Bind( wx.EVT_BUTTON, self.createDividers )
+		self.createLabelBtn.Bind( wx.EVT_BUTTON, self.createLabels )
 		self.deckNavBtn.Bind( wx.EVT_BUTTON, self.createDeckNavigator )
 
 	def __del__( self ):
@@ -218,16 +246,19 @@ class sfftkPanel ( wx.Panel ):
 
 
 	# Virtual event handlers, override them in your derived class
-	def addDecksForUser( self, event ):
+	def addDeckByID( self, event ):
 		event.Skip()
 
-	def addDeckByID( self, event ):
+	def importJSONFromFolder( self, event ):
 		event.Skip()
 
 	def deleteSelectedDecks( self, event ):
 		event.Skip()
 
 	def createDividers( self, event ):
+		event.Skip()
+
+	def createLabels( self, event ):
 		event.Skip()
 
 	def createDeckNavigator( self, event ):
