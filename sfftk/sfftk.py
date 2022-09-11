@@ -211,8 +211,10 @@ class SFFTK(sfftkPanel):
 			if "pdf" not in pathlib.Path(saveAsPath).suffix:
 				saveAsPath = saveAsPath + ".pdf"
 
-			self.collection.renderLabelPDF(saveAsPath
-											)
+			if self.labelChoiceCtrl.GetSelection() == 1:
+				self.collection.renderLongLabelPDF(saveAsPath)
+			else:
+				self.collection.renderLabelPDF(saveAsPath)
 
 
 	def createDeckNavigator( self, event ):

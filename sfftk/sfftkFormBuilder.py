@@ -170,7 +170,7 @@ class sfftkPanel ( wx.Panel ):
 		self.SFFLabels = wx.Panel( self.sfftkTab, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		labelMainSizer = wx.BoxSizer( wx.VERTICAL )
 
-		labelChoiceCtrlChoices = [ u"Top: Avery 5160" ]
+		labelChoiceCtrlChoices = [ u"Top: Avery 5160 - 1 x 2-5/8", u"Side: Custom - .8 x 3.75" ]
 		self.labelChoiceCtrl = wx.Choice( self.SFFLabels, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, labelChoiceCtrlChoices, 0 )
 		self.labelChoiceCtrl.SetSelection( 0 )
 		labelMainSizer.Add( self.labelChoiceCtrl, 0, wx.ALL, 5 )

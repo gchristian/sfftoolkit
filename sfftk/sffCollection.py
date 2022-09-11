@@ -32,10 +32,6 @@ class sffCollection(object):
 		Path(self.appData).mkdir(parents=True, exist_ok=True)
 		Path(self.cacheFolder).mkdir(parents=True, exist_ok=True)
 
-		#load decks from cache
-		self.deckNames = []
-		self.decks = self.loadCachedDecks()
-
 		self.faction_icons = {
 
 			"Nekrium" : os.path.join(self.resourcePath,"nekrium.png"),
@@ -54,6 +50,11 @@ class sffCollection(object):
 			"Rare Common" : os.path.join(self.resourcePath,"S1_RareCommon.png"),
 			"LS" : os.path.join(self.resourcePath,"S1_LS.png")
 		}
+
+		#load decks from cache
+		self.deckNames = []
+		self.decks = self.loadCachedDecks()
+		self.refreshStats()
 
 
 	def getDeckNames(self):
@@ -82,10 +83,10 @@ class sffCollection(object):
 			self.decks.append(jsonData)
 			self.deckNames.append(jsonData["name"])
 
+			self.refreshStats()
+
 			return True
 		
-		return False
-
 	def removeDeckByName(self, nameofdeck):
 		for deck in self.decks:
 			if deck["name"] == nameofdeck:
@@ -181,40 +182,101 @@ class sffCollection(object):
 		if page_position == 0:
 			sfdiv.showPage()
 
+
+	def drawLongLabel(self, sfdiv, height, page_position, deck):
+		deckname = deck.get("name")
+		faction = deck.get("faction")
+		rarities = deck["rarities"]
+		spellCount = deck.get("spellCount",0)
+		creatureTypes =deck.get("creatureTypes",[])
+		creatureNames = deck.get("creatureNames")
+
+		div_width = 3.75 * inch
+		div_height = height * inch
+
+		left_margin = ((8.5 - (2 * 3.75)) / 2) * inch
+		top_margin = ((11 - (height * 12)) / 2 ) * inch
+
+		if page_position == 0:
+			row = 11
+			col = 1
+		else:
+			row = ceil(page_position / 2) - 1
+			col = page_position % 2
+			if col == 0:
+				col = 1
+			else:
+				col = 0
+
+		faction_icon = self.faction_icons.get(faction,"")
+
+		sfdiv.rect(left_margin + (col * div_width), top_margin + (row * div_height), div_width, div_height, stroke=1, fill=0)
+		sfdiv.drawImage(faction_icon, (left_margin - (inch * .4))  + (col * div_width), top_margin + (row * div_height), preserveAspectRatio=True, mask="auto",height=.30*inch)
+		sfdiv.setFont("Times-Roman", 11)
+		#canvas.setFillColor(red)
+		sfdiv.drawString((inch * .3) + left_margin + (col * div_width), (inch * .14) + top_margin + (row * div_height),deckname)
+		sfdiv.setFont("Times-Roman", 8)
+		if spellCount > 0:
+			sfdiv.drawString((inch * .31) + left_margin + (col * div_width) + (3 * inch), (inch * .25) + top_margin + (row * div_height),"Spells: " + str(spellCount))
+		rarityCount = 1
+		for rarity in rarities:
+			sfdiv.drawImage(rarity, (left_margin - (inch * .3)) + (rarityCount * .1 * inch)  + (col * div_width), top_margin + (row * div_height) + (.165* inch), preserveAspectRatio=True, mask="auto",height=.1*inch)
+			rarityCount = rarityCount + 1
+
+		sfdiv.setFont("Times-Roman", 7)
+		creatureString = ""
+		for creature in sorted(creatureTypes.keys()):
+			creatureString = creatureString + "(" + creature + ": " + str(creatureTypes[creature]) + ") "
 		
+		sfdiv.drawString((inch * .1) + left_margin + (col * div_width), (inch * .12) + top_margin + (row * div_height) + (.25* inch),creatureString)
+
+		creatureNames.sort(key=len)
+
+		creatureNameStringRow1 = "[" + creatureNames[4] + "]" + " [" + creatureNames[6] + "]" + " [" + creatureNames[8] + "]"
+		creatureNameStringRow2 = "[" + creatureNames[5] + "]" + " [" + creatureNames[7] + "]" + " [" + creatureNames[9] + "]"
+		creatureNameStringRow3 = "[" + creatureNames[0] + "]" + " [" + creatureNames[1] + "]" + " [" + creatureNames[2] + "]" + " [" + creatureNames[3] + "]"
+
+		sfdiv.drawString((inch * .1) + left_margin + (col * div_width), (inch * .12) + top_margin + (row * div_height) + (.355* inch),creatureNameStringRow1)
+		sfdiv.drawString((inch * .1) + left_margin + (col * div_width), (inch * .12) + top_margin + (row * div_height) + (.46* inch),creatureNameStringRow2)
+		sfdiv.drawString((inch * .1) + left_margin + (col * div_width), (inch * .12) + top_margin + (row * div_height) + (.565* inch),creatureNameStringRow3)
+
+		if page_position == 0:
+			sfdiv.showPage()
+
+	def renderLongLabelPDF(self,path,height=.8,sort=0):
+		
+		try:
+			sfdiv = canvas.Canvas(path, pagesize=letter, bottomup=0)
+		except IOError:
+			print("Cannot save PDF to '%s'." % path)
+			
+		decksSorted = sorted(self.decks, key=itemgetter('name'))
+
+		if sort == 0:
+			decksSorted = sorted(decksSorted, key=itemgetter('faction'))
+
+
+		deckCount = 0
+
+		for deck in decksSorted:
+			deckCount = deckCount + 1
+
+					# 0 Name, rarities, spell cnt - creature counts on body
+					# 1 Name, rarities, spell cnt, types
+					# 2 Name, spell cnt, types
+
+			self.drawLongLabel(sfdiv,height,deckCount % 24, deck)
+
+
+
+		sfdiv.save()
+
 	def renderDividerPDF(self,path,height=2.9,factionDividers=False,sort=0, layout=0):
 		
 		try:
 			sfdiv = canvas.Canvas(path, pagesize=letter, bottomup=0)
 		except IOError:
 			print("Cannot save PDF to '%s'." % path)
-
-		for deck in self.decks:
-			cardCount = 0
-			spellCount = 0
-			creatureTypes = {}
-			rarities = []
-
-			while cardCount < 10:
-				cardCount = cardCount + 1
-				card = deck["cards"][str(cardCount)]
-				if card.get("cardType") == "Spell":
-					spellCount = spellCount + 1
-				if card.get("cardType") == "Creature":
-					for subType in card.get("cardSubType","").split(" "):
-						if subType in creatureTypes:
-							creatureTypes[subType] = creatureTypes[subType] + 1
-						else:
-							creatureTypes[subType] = 1
-
-				if "crossFaction" in card:
-					rarities.append(self.faction_icons.get(card.get("crossFaction"),""))
-				if card.get("rarity","") in self.rarity_icons:
-					rarities.append(self.rarity_icons[card["rarity"]])
-
-			deck["rarities"] = rarities
-			deck["spellCount"] = spellCount
-			deck["creatureTypes"] = creatureTypes
 			
 		decksSorted = sorted(self.decks, key=itemgetter('name'))
 
@@ -336,14 +398,7 @@ class sffCollection(object):
 		if page_position == 0:
 			sfdiv.showPage()
 
-		
-	def renderLabelPDF(self,path):
-		
-		try:
-			sfdiv = canvas.Canvas(path, pagesize=letter, bottomup=0)
-		except IOError:
-			print("Cannot save PDF to '%s'." % path)
-
+	def refreshStats(self):
 		for deck in self.decks:
 			cardCount = 0
 			spellCount = 0
@@ -373,6 +428,14 @@ class sffCollection(object):
 			deck["spellCount"] = spellCount
 			deck["creatureTypes"] = creatureTypes
 			deck["creatureNames"] = creatureNames
+
+		
+	def renderLabelPDF(self,path):
+		
+		try:
+			sfdiv = canvas.Canvas(path, pagesize=letter, bottomup=0)
+		except IOError:
+			print("Cannot save PDF to '%s'." % path)
 			
 		decksSorted = sorted(self.decks, key=itemgetter('name'))
 
@@ -476,7 +539,9 @@ class sffCollection(object):
 		html = template.split("[deck]")[0]
 		index = """<html><body><h2>All Decks</h2><div><p>
 		<a href="browse.html">All decks, with filters.</a></p>
-		<p><a href="overview.html">All decks, one page summaries.</a></p></div>
+		<p><a href="overview.html">All decks, one page summaries.</a></p>
+		<p><a href="collection_stats.html">Collection Wide Stats</a></p>
+		</div>
 		<h2>Single Deck Card Browsers</h2><div>"""
 		
 
@@ -738,7 +803,87 @@ slider.oninput = function() {
 
 		if overview:
 			self.generateDeckOverview(out_path)
+		
+		self.halfDeckList(os.path.join(out_path,"decks.csv"))
+		self.collectionStats(os.path.join(out_path,"collection_stats.html"))
+
+		
+
+	def halfDeckList(self, out_path):
+		with open(out_path, "w") as halfDeckListFile:
+			halfDeckListFile.write("Faction\tName\tID\tSpells\tForgeborn\tAbilities\tCreature Types\tCreature Names\n")
+			for deck in self.decks:
+				deckRow = []
+				deckRow.append(deck["faction"])
+				deckRow.append(deck["name"])
+				deckRow.append(deck["id"])
+				deckRow.append(deck["spellCount"])
+				deckRow.append(deck["forgeborn"]["title"])
+				deckRow.append(",".join([deck["forgeborn"]["a2n"].strip(),deck["forgeborn"]["a3n"].strip(),deck["forgeborn"]["a4n"].strip()]))
+
+				creatureString = ""
+				for creature in sorted(deck["creatureTypes"].keys()):
+					creatureString = creatureString + " " + creature + ": " + str(deck["creatureTypes"][creature])
+				deckRow.append(creatureString)
+
+				deckRow.append(",".join(deck["creatureNames"]))
+
+				halfDeckListFile.write("\t".join(str(item) for item in deckRow) + "\n")
+
+	def collectionStats(self, out_path):
+		with open(out_path, "w") as collectionFile:
+			all_types = {}
+			all_names = {}
+			all_fb = {}
+			all_fb2_abilities = {}
+			all_fb3_abilities = {}
+			all_fb4_abilities = {}
+
+			for deck in self.decks:
+				all_fb[deck["forgeborn"]["title"]] = all_fb.get(deck["forgeborn"]["title"],0) + 1
+				all_fb2_abilities[deck["forgeborn"]["a2n"].strip()] = all_fb2_abilities.get(deck["forgeborn"]["a2n"].strip(),0) + 1
+				all_fb3_abilities[deck["forgeborn"]["a3n"].strip()] = all_fb3_abilities.get(deck["forgeborn"]["a3n"].strip(),0) + 1
+				all_fb4_abilities[deck["forgeborn"]["a4n"].strip()] = all_fb4_abilities.get(deck["forgeborn"]["a4n"].strip(),0) + 1
+				for type in deck["creatureTypes"]:
+					all_types[type] = all_types.get(type,0) + deck["creatureTypes"][type]
+				for name in deck["creatureNames"]:
+					all_names[name] = all_names.get(name,0) + 1
 			
+			collectionFile.write("<html><body>")
+
+
+			collectionFile.write("<h2>Creature Types</h2>\n<table><thead><tr><td></td><td></td></tr></thead><tbody>\n")
+			for type in all_types:
+				collectionFile.write("<tr><td>%s</td><td>%i</td></tr>\n" % (type, all_types[type]))
+			collectionFile.write("</tbody></table>\n")
+			
+			collectionFile.write("<h2>Card Names</h2>\n<table><thead><tr><td></td><td></td></tr></thead><tbody>")
+			for type in all_names:
+				collectionFile.write("<tr><td>%s</td><td>%i</td></tr>\n" % (type, all_names[type]))
+			collectionFile.write("</tbody></table>\n")
+
+			collectionFile.write("<h2>Forgeborn</h2>\n<table><thead><tr><td></td><td></td></tr></thead><tbody>")
+			for type in all_fb:
+				collectionFile.write("<tr><td>%s</td><td>%i</td></tr>\n" % (type, all_fb[type]))
+			collectionFile.write("</tbody></table>\n")
+
+			collectionFile.write("<h2>Level 2 Abillity</h2>\n<table><thead><tr><td></td><td></td></tr></thead><tbody>")
+			for type in all_fb2_abilities:
+				collectionFile.write("<tr><td>%s</td><td>%i</td></tr>\n" % (type, all_fb2_abilities[type]))
+			collectionFile.write("</tbody></table>\n")
+
+			collectionFile.write("<h2>Level 3 Abillity</h2>\n<table><thead><tr><td></td><td></td></tr></thead><tbody>")
+			for type in all_fb3_abilities:
+				collectionFile.write("<tr><td>%s</td><td>%i</td></tr>\n" % (type, all_fb3_abilities[type]))
+			collectionFile.write("</tbody></table>\n")
+
+			collectionFile.write("<h2>Level 4 Abillity</h2>\n<table><thead><tr><td></td><td></td></tr></thead><tbody>")
+			for type in all_fb4_abilities:
+				collectionFile.write("<tr><td>%s</td><td>%i</td></tr>\n" % (type, all_fb4_abilities[type]))
+			collectionFile.write("</tbody></table>\n")
+
+			collectionFile.write("</html></body>")
+
 
 	def generateDeckOverview(self, out_path):
 		template_file = ""
