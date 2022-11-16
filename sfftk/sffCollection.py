@@ -218,6 +218,9 @@ class sffCollection(object):
 		sfdiv.setFont("Times-Roman", 8)
 		if spellCount > 0:
 			sfdiv.drawString((inch * .31) + left_margin + (col * div_width) + (3 * inch), (inch * .25) + top_margin + (row * div_height),"Spells: " + str(spellCount))
+		
+
+		
 		rarityCount = 1
 		for rarity in rarities:
 			sfdiv.drawImage(rarity, (left_margin - (inch * .3)) + (rarityCount * .1 * inch)  + (col * div_width), top_margin + (row * div_height) + (.165* inch), preserveAspectRatio=True, mask="auto",height=.1*inch)
@@ -239,6 +242,13 @@ class sffCollection(object):
 		sfdiv.drawString((inch * .1) + left_margin + (col * div_width), (inch * .12) + top_margin + (row * div_height) + (.355* inch),creatureNameStringRow1)
 		sfdiv.drawString((inch * .1) + left_margin + (col * div_width), (inch * .12) + top_margin + (row * div_height) + (.46* inch),creatureNameStringRow2)
 		sfdiv.drawString((inch * .1) + left_margin + (col * div_width), (inch * .12) + top_margin + (row * div_height) + (.565* inch),creatureNameStringRow3)
+
+		sfdiv.setFont("Times-Roman", 6)
+		fb_ability_str = " | ".join([deck["forgeborn"]["a2n"].strip(),deck["forgeborn"]["a3n"].strip(),deck["forgeborn"]["a4n"].strip()])
+		fb_ability_str = fb_ability_str.replace("Army of the Damned", "AOTD")
+		fb_ability_str = fb_ability_str.replace("the", "")
+		sfdiv.drawString((inch * .305) + left_margin + (col * div_width) + (1.125 * inch), (inch * .25) + top_margin + (row * div_height),fb_ability_str)
+
 
 		if page_position == 0:
 			sfdiv.showPage()
@@ -460,7 +470,7 @@ class sffCollection(object):
 		for deck in self.decks:
 			cards = deck["imageUrl"]
 			fbFront = deck["forgeborn"]["imageUrl"]
-			fbBack = deck["forgeborn"]["imageUrlBack"]
+			#fbBack = deck["forgeborn"]["imageUrlBack"]
 
 			if os.path.isfile(os.path.join(self.cacheFolder,cards.rsplit('/', 1)[-1])) == False:
 				links.append((cards,os.path.join(self.cacheFolder,cards.rsplit('/', 1)[-1])))
@@ -468,8 +478,8 @@ class sffCollection(object):
 			if os.path.isfile(os.path.join(self.cacheFolder,fbFront.rsplit('/', 1)[-1])) == False:
 				links.append((fbFront,os.path.join(self.cacheFolder,fbFront.rsplit('/', 1)[-1])))
 			
-			if os.path.isfile(os.path.join(self.cacheFolder,fbBack.rsplit('/', 1)[-1])) == False:
-				links.append((fbBack,os.path.join(self.cacheFolder,fbBack.rsplit('/', 1)[-1])))
+			#if os.path.isfile(os.path.join(self.cacheFolder,fbBack.rsplit('/', 1)[-1])) == False:
+			#	links.append((fbBack,os.path.join(self.cacheFolder,fbBack.rsplit('/', 1)[-1])))
 			
 		return links
 
@@ -515,18 +525,21 @@ class sffCollection(object):
 				if pDialog:
 					pDialog.Update(cardIncrement,newmsg="Extracting " + deck["name"] + " - " + deck["cards"][str(cardnumber)]["title"])
 
-				card_name = deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["title"] + ".jpg"
-				
+				if "name" in deck["forgeborn"]:
+					card_name = deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["name"] + ".jpg"
+				else:
+					card_name = deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["title"] + ".jpg"
+
 				fb_image.save(os.path.join(imagePath,card_name))
 
 
-			with Image.open(os.path.join(self.cacheFolder,deck["forgeborn"]["imageUrlBack"].rsplit('/', 1)[-1])) as fbBack:
-				if pDialog:
-					pDialog.Update(cardIncrement,newmsg="Extracting " + deck["name"] + " - " + deck["cards"][str(cardnumber)]["title"])
+			#with Image.open(os.path.join(self.cacheFolder,deck["forgeborn"]["imageUrlBack"].rsplit('/', 1)[-1])) as fbBack:
+		#		if pDialog:
+		#			pDialog.Update(cardIncrement,newmsg="Extracting " + deck["name"] + " - " + deck["cards"][str(cardnumber)]["title"])
 
-				card_name = deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["title"] + " Back.jpg"
+		#		card_name = deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["title"] + " Back.jpg"
 				
-				fbBack.save(os.path.join(imagePath,card_name))
+		#		fbBack.save(os.path.join(imagePath,card_name))
 
 	def generateDeckNavigator(self, out_path, images=False, overview=True):
 		template_file = ""
@@ -630,13 +643,16 @@ slider.oninput = function() {
 </script>"""
 			cards = sorted(deck["cards"].values(), key=itemgetter('cardType'))
 
+			fb_name = ("images/" + deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"].get("title",deck["forgeborn"].get("name","")) + ".jpg")
+			
+
 			if images:
 				imageBlock = """<span class="has-hover-card">
 				<img src='data/forge.gif' width='20' height='20'></img>
 					<span class="hover-card">
 						<img src="%s" width="281" height="206.5"></img>
 					</span>
-					</span>""" % ("images/" + deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["title"] + ".jpg")
+					</span>""" % ("images/" + fb_name + ".jpg")
 			else:
 				imageBlock = ""
 
@@ -663,7 +679,7 @@ slider.oninput = function() {
 									</tr>""" % ("<img src='data/" + factionIcon +"' width='20' height='20'></img><span style='display: none;'>"+deck["faction"]+"</span>",
 												deck["name"],
 									"<span style='display: none;'>Forgeborn</span>" + imageBlock,
-													deck["forgeborn"]["title"],
+													deck["forgeborn"].get("title",deck["forgeborn"].get("name","")),
 													deck["forgeborn"]["a2n"],
 													deck["forgeborn"]["a2t"],
 													deck["forgeborn"]["a3n"],
@@ -676,8 +692,8 @@ slider.oninput = function() {
 									</div>
 									<div class = "forgeborn_back">
 										<img src="../images/%s" class="tall_card"></img>
-									</div>""" % (deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["title"] + ".jpg",
-												deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["title"] + " Back.jpg")
+									</div>""" % (deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"].get("title",deck["forgeborn"].get("name","")) + ".jpg",
+												deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"].get("title",deck["forgeborn"].get("name","")) + " Back.jpg")
 
 			for card in cards:
 				if "crossFaction" in card:
@@ -818,7 +834,7 @@ slider.oninput = function() {
 				deckRow.append(deck["name"])
 				deckRow.append(deck["id"])
 				deckRow.append(deck["spellCount"])
-				deckRow.append(deck["forgeborn"]["title"])
+				deckRow.append(deck["forgeborn"].get("title",deck["forgeborn"].get("name","")))
 				deckRow.append(",".join([deck["forgeborn"]["a2n"].strip(),deck["forgeborn"]["a3n"].strip(),deck["forgeborn"]["a4n"].strip()]))
 
 				creatureString = ""
@@ -840,7 +856,7 @@ slider.oninput = function() {
 			all_fb4_abilities = {}
 
 			for deck in self.decks:
-				all_fb[deck["forgeborn"]["title"]] = all_fb.get(deck["forgeborn"]["title"],0) + 1
+				all_fb[deck["forgeborn"].get("title",deck["forgeborn"].get("name",""))] = all_fb.get(deck["forgeborn"].get("title",deck["forgeborn"].get("name","")),0) + 1
 				all_fb2_abilities[deck["forgeborn"]["a2n"].strip()] = all_fb2_abilities.get(deck["forgeborn"]["a2n"].strip(),0) + 1
 				all_fb3_abilities[deck["forgeborn"]["a3n"].strip()] = all_fb3_abilities.get(deck["forgeborn"]["a3n"].strip(),0) + 1
 				all_fb4_abilities[deck["forgeborn"]["a4n"].strip()] = all_fb4_abilities.get(deck["forgeborn"]["a4n"].strip(),0) + 1
@@ -911,7 +927,7 @@ slider.oninput = function() {
 				<li class='text4'><strong>%s</strong> - %s</li>
 			</ol>""" %	("<img src='data/" + factionIcon +"' width='15' height='15'></img>",
 					deck["name"],
-					deck["forgeborn"]["title"],
+					deck["forgeborn"].get("title",deck["forgeborn"].get("name","")),
 					deck["forgeborn"]["a2n"],
 					deck["forgeborn"]["a2t"],
 					deck["forgeborn"]["a3n"],

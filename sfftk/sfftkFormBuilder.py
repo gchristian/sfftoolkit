@@ -101,6 +101,11 @@ class sfftkPanel ( wx.Panel ):
 
 		mainSecondHSizer.Add( self.addDeckBtn, 0, wx.ALL, 5 )
 
+		self.importUsrBtn = wx.Button( self.deckPage, wx.ID_ANY, u"Import User", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.importUsrBtn.SetToolTip( u"Using username above, pulls all half decks from solforgefusion.com website." )
+
+		mainSecondHSizer.Add( self.importUsrBtn, 0, wx.ALL, 5 )
+
 		self.importJSONBtn = wx.Button( self.deckPage, wx.ID_ANY, u"Import JSON", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.importJSONBtn.SetToolTip( u"Using username above, pulls all half decks from solforgefusion.com website." )
 
@@ -235,6 +240,7 @@ class sfftkPanel ( wx.Panel ):
 
 		# Connect Events
 		self.addDeckBtn.Bind( wx.EVT_BUTTON, self.addDeckByID )
+		self.importUsrBtn.Bind( wx.EVT_BUTTON, self.addDecksForUser )
 		self.importJSONBtn.Bind( wx.EVT_BUTTON, self.importJSONFromFolder )
 		self.deleteDeckBtn.Bind( wx.EVT_BUTTON, self.deleteSelectedDecks )
 		self.createDivBtn.Bind( wx.EVT_BUTTON, self.createDividers )
@@ -247,6 +253,9 @@ class sfftkPanel ( wx.Panel ):
 
 	# Virtual event handlers, override them in your derived class
 	def addDeckByID( self, event ):
+		event.Skip()
+
+	def addDecksForUser( self, event ):
 		event.Skip()
 
 	def importJSONFromFolder( self, event ):

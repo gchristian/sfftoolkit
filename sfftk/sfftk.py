@@ -138,45 +138,62 @@ class SFFTK(sfftkPanel):
 			completed = wx.MessageDialog(self, "%i decks added\n%i decks failed" % (decksAdded, decksFailed), caption="Finished Processing User")
 			completed.ShowModal()
 
-
-	# def addDecksForUser( self, event ):
-	# 	user = self.userCtrl.Value
+	
+	def addDecksForUser( self, event ):
+		user = self.userCtrl.Value
 	
 
-	# 	if user == "":
-	# 		failed = wx.MessageDialog(self, "You must populate your User name first.", caption="No User")
-	# 		failed.ShowModal()
-	# 		return
+		if user == "":
+			failed = wx.MessageDialog(self, "You must populate your User name first.", caption="No User")
+			failed.ShowModal()
+			return
 			
-	# 	headers={'Accept' : 'application/json','Content-Type': 'application/json'}
 
-	# 	r = requests.get("https://ul51g2rg42.execute-api.us-east-1.amazonaws.com/main/deck/?pageSize=100&inclCards=true&username="+user,
-	# 					headers=headers)
-	# 	try:
-	# 		response_content = json.loads(r.content)
-	# 		decksAdded = 0
-	# 		decksSkipped = 0
-	# 		decksFailed = 0
+		decksToCheck = []
 
-	# 		if "Items" in response_content:
-	# 			for item in response_content["Items"]:
-	# 				if self.ignoreCache.IsChecked() == False:
-	# 					if self.collection.containsDeck(item.get("id","")) == True:
-	# 						decksSkipped = decksSkipped + 1
-	# 						continue
-	# 				if self.collection.addDeckFromJSON(item):
-	# 					decksAdded = decksAdded + 1
-	# 					self.deckListCtrl.InsertItems([item["name"]],0)
-	# 				else:
-	# 					decksFailed = decksFailed + 1
+		try:
+			headers={'Accept' : 'application/json','Content-Type': 'application/json'}
 
-	# 			completed = wx.MessageDialog(self, "%i decks added\n %i decks skipped\n%i decks failed" % (decksAdded, decksSkipped, decksFailed), caption="Finished Processing User")
-	# 			completed.ShowModal()
-	# 		else:
-	# 			failed = wx.MessageDialog(self, "Response from server not what we expected." + r.content.decode("utf-8") , caption="Failed Prcoessing User")
-	# 			failed.ShowModal()
-	# 	except Exception as e:
-	# 		print(e)
+			r = requests.get("https://ul51g2rg42.execute-api.us-east-1.amazonaws.com/main/deck/?pageSize=50&inclCards=true&username="+user,
+						headers=headers)
+
+			response_content = json.loads(r.content)
+			if "Items" in response_content:
+				decksToCheck.extend(response_content["Items"])
+			while "LastEvaluatedKey" in response_content:
+				key = requests.utils.quote(json.dumps(response_content['LastEvaluatedKey']))
+				print(key)
+				print("https://ul51g2rg42.execute-api.us-east-1.amazonaws.com/main/deck/?pageSize=50&inclCards=true&username="+user+"&exclusiveStartKey="
+								+key)
+				r = requests.get("https://ul51g2rg42.execute-api.us-east-1.amazonaws.com/main/deck/?pageSize=50&inclCards=true&username="+user+"&exclusiveStartKey="
+								+key,
+						headers=headers)
+				response_content = json.loads(r.content)
+				if "Items" in response_content:
+					decksToCheck.extend(response_content["Items"])
+		except Exception as e:
+			print(e)
+			failed = wx.MessageDialog(self, "Response from server not what we expected." + r.content.decode("utf-8") , caption="Failed Prcoessing User")
+			failed.ShowModal()
+
+		decksAdded = 0
+		decksSkipped = 0
+		decksFailed = 0
+
+		for item in decksToCheck:
+			if self.ignoreCache.IsChecked() == False:
+				if self.collection.containsDeck(item.get("id","")) == True:
+					decksSkipped = decksSkipped + 1
+					continue
+			if self.collection.addDeckFromJSON(item):
+				decksAdded = decksAdded + 1
+				self.deckListCtrl.InsertItems([item["name"]],0)
+			else:
+				decksFailed = decksFailed + 1
+
+		completed = wx.MessageDialog(self, "%i decks added\n %i decks skipped\n%i decks failed" % (decksAdded, decksSkipped, decksFailed), caption="Finished Processing User")
+		completed.ShowModal()
+
 
 	def createDividers( self, event ):
 
