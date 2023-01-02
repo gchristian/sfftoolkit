@@ -138,6 +138,25 @@ class SFFTK(sfftkPanel):
 			completed = wx.MessageDialog(self, "%i decks added\n%i decks failed" % (decksAdded, decksFailed), caption="Finished Processing User")
 			completed.ShowModal()
 
+
+	def pullJSON(self, deck_id):
+		headers={'Accept' : 'application/json','Content-Type': 'application/json'}
+
+		try:
+			r = requests.get("https://ul51g2rg42.execute-api.us-east-1.amazonaws.com/main/deck/"+deck_id+"?inclCards=true&inclUsers=true",
+						headers=headers)	
+			try:
+				response_content = json.loads(r.content)
+				if "id" in response_content:
+						if self.collection.addDeckFromJSON(response_content):
+							return True
+				return False
+			except Exception as e:
+				print(e)
+				return False
+		except Exception as e:
+			print(e)
+			return False
 	
 	def addDecksForUser( self, event ):
 		user = self.userCtrl.Value
@@ -154,7 +173,7 @@ class SFFTK(sfftkPanel):
 		try:
 			headers={'Accept' : 'application/json','Content-Type': 'application/json'}
 
-			r = requests.get("https://ul51g2rg42.execute-api.us-east-1.amazonaws.com/main/deck/?pageSize=50&inclCards=true&username="+user,
+			r = requests.get("https://ul51g2rg42.execute-api.us-east-1.amazonaws.com/main/deck/?pageSize=36&inclCards=true&username="+user,
 						headers=headers)
 
 			response_content = json.loads(r.content)
@@ -162,10 +181,7 @@ class SFFTK(sfftkPanel):
 				decksToCheck.extend(response_content["Items"])
 			while "LastEvaluatedKey" in response_content:
 				key = requests.utils.quote(json.dumps(response_content['LastEvaluatedKey']))
-				print(key)
-				print("https://ul51g2rg42.execute-api.us-east-1.amazonaws.com/main/deck/?pageSize=50&inclCards=true&username="+user+"&exclusiveStartKey="
-								+key)
-				r = requests.get("https://ul51g2rg42.execute-api.us-east-1.amazonaws.com/main/deck/?pageSize=50&inclCards=true&username="+user+"&exclusiveStartKey="
+				r = requests.get("https://ul51g2rg42.execute-api.us-east-1.amazonaws.com/main/deck/?pageSize=36&inclCards=true&username="+user+"&exclusiveStartKey="
 								+key,
 						headers=headers)
 				response_content = json.loads(r.content)
@@ -185,7 +201,9 @@ class SFFTK(sfftkPanel):
 				if self.collection.containsDeck(item.get("id","")) == True:
 					decksSkipped = decksSkipped + 1
 					continue
-			if self.collection.addDeckFromJSON(item):
+			#pull each deck seperately - takes way longer and was just for troubleshooting
+			#if self.pullJSON(item.get("id","")):
+			if self.pullJSON(item["id"]):
 				decksAdded = decksAdded + 1
 				self.deckListCtrl.InsertItems([item["name"]],0)
 			else:

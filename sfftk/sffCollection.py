@@ -12,6 +12,9 @@ import sys
 
 from operator import itemgetter
 
+def matchScore(item):
+  return item["score"]
+
 class sffCollection(object):
 	def __init__(self):
 		super().__init__()
@@ -76,7 +79,7 @@ class sffCollection(object):
 
 
 	def addDeckFromJSON(self, jsonData):
-		if "id" not in jsonData:
+		if jsonData.get("id","") == "":
 			return False
 		with open(os.path.join(self.cacheFolder,jsonData["id"]+".json"), 'w', encoding='utf-8') as deck_file:
 			json.dump(jsonData, deck_file, ensure_ascii=False, indent=4)
@@ -408,6 +411,84 @@ class sffCollection(object):
 		if page_position == 0:
 			sfdiv.showPage()
 
+	# def refreshStats(self):
+	# 	for deck in self.decks:
+	# 		cardCount = 0
+	# 		spellCount = 0
+	# 		creatureTypes = {}
+	# 		rarities = []
+	# 		creatureNames = []
+
+	# 		while cardCount < 10:
+	#			cardCount = cardCount + 1
+	# 			card = deck["cards"][str(cardCount)]
+	# 			if card.get("cardType") == "Spell":
+	# 				spellCount = spellCount + 1
+	# 			if card.get("cardType") == "Creature":
+	# 				for subType in card.get("cardSubType","").split(" "):
+	# 					if subType in creatureTypes:
+	# 						creatureTypes[subType] = creatureTypes[subType] + 1
+	# 					else:
+	# 						creatureTypes[subType] = 1
+	# 			creatureNames.append(card["name"])
+
+	# 			if "crossFaction" in card:
+	# 				rarities.append(self.faction_icons.get(card.get("crossFaction"),""))
+	# 			if card.get("rarity","") in self.rarity_icons:
+	# 				rarities.append(self.rarity_icons[card["rarity"]])
+
+	# 		deck["rarities"] = rarities
+	# 		deck["spellCount"] = spellCount
+	# 		deck["creatureTypes"] = creatureTypes
+	# 		deck["creatureNames"] = creatureNames
+
+	def deckSimilarityStats(self):
+		
+		for deck in self.decks:
+			cards = {}
+			deck["Match Scores"] = []
+
+			for card in deck["cards"]:
+				cards[deck["cards"][card]["title"]] = deck["cards"][card].get("spliced",False)
+			
+			for deckToCompare in self.decks:
+				cardsToCompare = {}
+				if deckToCompare == deck or deckToCompare["faction"] != deck["faction"]:
+					continue
+				else:
+					for card in deckToCompare["cards"]:
+						cardsToCompare[deckToCompare["cards"][card]["title"]] = deckToCompare["cards"][card].get("spliced",False)
+
+				same = list(set(cards.keys()).intersection(cardsToCompare.keys()))
+				diff = list(set(cards.keys()).difference(cardsToCompare.keys()))
+				diff2 = list(set(cardsToCompare.keys()).difference(cards.keys()))
+				
+				unique = []
+				unique.extend(diff)
+				unique.extend(diff2)
+
+		
+				deck_forged_pieces = []
+				deck_to_compare_forged_pieces = []
+				for d in unique:
+
+					if d in cards and cards[d] == 'True':
+						deck_forged_pieces.extend(d.replace("Charge Plated", "CP").split(" "))
+					if d in cardsToCompare and cardsToCompare[d] == 'True':
+						deck_to_compare_forged_pieces.extend(d.replace("Charge Plated", "CP").split(" "))
+
+				f_same = list(set(deck_forged_pieces).intersection(deck_to_compare_forged_pieces))
+
+				whole_matches = len(same)
+				forged_points = len(f_same) / 2
+				cards_total = ((whole_matches + forged_points) / 10) * 100 
+				deck["Match Scores"].append({"name": deckToCompare["name"],"score" : cards_total})
+
+			deck["Match Scores"].sort(key=matchScore,reverse=True)
+
+
+#stats()
+
 	def refreshStats(self):
 		for deck in self.decks:
 			cardCount = 0
@@ -415,10 +496,12 @@ class sffCollection(object):
 			creatureTypes = {}
 			rarities = []
 			creatureNames = []
+			baseCreatures = []
+			modifiers = []
 
 			while cardCount < 10:
-				cardCount = cardCount + 1
-				card = deck["cards"][str(cardCount)]
+				
+				card = deck["cardList"][cardCount]
 				if card.get("cardType") == "Spell":
 					spellCount = spellCount + 1
 				if card.get("cardType") == "Creature":
@@ -427,17 +510,26 @@ class sffCollection(object):
 							creatureTypes[subType] = creatureTypes[subType] + 1
 						else:
 							creatureTypes[subType] = 1
-				creatureNames.append(card["title"])
 
-				if "crossFaction" in card:
+				creatureNames.append(card["name"])			
+				
+
+				if card.get("betrayer",False):
 					rarities.append(self.faction_icons.get(card.get("crossFaction"),""))
 				if card.get("rarity","") in self.rarity_icons:
 					rarities.append(self.rarity_icons[card["rarity"]])
+				cardCount = cardCount + 1
+
 
 			deck["rarities"] = rarities
 			deck["spellCount"] = spellCount
 			deck["creatureTypes"] = creatureTypes
 			deck["creatureNames"] = creatureNames
+			deck["baseCreatures"] = baseCreatures
+			deck["modifiers"] = modifiers
+		
+		self.decks.sort(key=itemgetter('faction', 'name'))
+		#self.deckSimilarityStats()
 
 		
 	def renderLabelPDF(self,path):
@@ -470,7 +562,11 @@ class sffCollection(object):
 		for deck in self.decks:
 			cards = deck["imageUrl"]
 			fbFront = deck["forgeborn"]["imageUrl"]
-			#fbBack = deck["forgeborn"]["imageUrlBack"]
+			if "imageUrlBack" in deck["forgeborn"]:
+				fbBack = deck["forgeborn"]["imageUrlBack"]
+				if os.path.isfile(os.path.join(self.cacheFolder,fbBack.rsplit('/', 1)[-1])) == False:
+					links.append((fbBack,os.path.join(self.cacheFolder,fbBack.rsplit('/', 1)[-1])))
+
 
 			if os.path.isfile(os.path.join(self.cacheFolder,cards.rsplit('/', 1)[-1])) == False:
 				links.append((cards,os.path.join(self.cacheFolder,cards.rsplit('/', 1)[-1])))
@@ -478,8 +574,7 @@ class sffCollection(object):
 			if os.path.isfile(os.path.join(self.cacheFolder,fbFront.rsplit('/', 1)[-1])) == False:
 				links.append((fbFront,os.path.join(self.cacheFolder,fbFront.rsplit('/', 1)[-1])))
 			
-			#if os.path.isfile(os.path.join(self.cacheFolder,fbBack.rsplit('/', 1)[-1])) == False:
-			#	links.append((fbBack,os.path.join(self.cacheFolder,fbBack.rsplit('/', 1)[-1])))
+
 			
 		return links
 
@@ -500,10 +595,10 @@ class sffCollection(object):
 			
 
 			while cardnumber < 10:
-				cardnumber = cardnumber + 1
+				
 				with Image.open(os.path.join(self.cacheFolder,deck["imageUrl"].rsplit('/', 1)[-1])) as deck_image:
 					if pDialog:
-						pDialog.Update(cardIncrement,newmsg="Extracting " + deck["name"] + " - " + deck["cards"][str(cardnumber)]["title"])
+						pDialog.Update(cardIncrement,newmsg="Extracting " + deck["name"] + " - " + deck["cardList"][cardnumber]["name"])
 					width, height = deck_image.size
 					new_left = (cardnumber-1)*(width/10)
 					new_right = cardnumber*(width/10)
@@ -515,15 +610,16 @@ class sffCollection(object):
 						new_height = levelnumber * (height/3)
 						card_image = deck_image.crop((new_left,(height/3) * (levelnumber-1),new_right,new_height))
 					
-						card_name = deck["name"] + " - " + deck["cards"][str(cardnumber)]["title"] + " - Lvl " +str(levelPath) + ".jpg"
+						card_name = deck["name"] + " - " + deck["cardList"][cardnumber]["name"] + " - Lvl " +str(levelPath) + ".jpg"
 
 						card_image.save(os.path.join(imagePath,card_name))
 						levelnumber = levelnumber - 1
 						levelPath = levelPath + 1
+				cardnumber = cardnumber + 1
 
 			with Image.open(os.path.join(self.cacheFolder,deck["forgeborn"]["imageUrl"].rsplit('/', 1)[-1])) as fb_image:
 				if pDialog:
-					pDialog.Update(cardIncrement,newmsg="Extracting " + deck["name"] + " - " + deck["cards"][str(cardnumber)]["title"])
+					pDialog.Update(cardIncrement,newmsg="Extracting " + deck["name"] + " - " + deck["cardList"][cardnumber]["name"])
 
 				if "name" in deck["forgeborn"]:
 					card_name = deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["name"] + ".jpg"
@@ -533,13 +629,16 @@ class sffCollection(object):
 				fb_image.save(os.path.join(imagePath,card_name))
 
 
-			#with Image.open(os.path.join(self.cacheFolder,deck["forgeborn"]["imageUrlBack"].rsplit('/', 1)[-1])) as fbBack:
-		#		if pDialog:
-		#			pDialog.Update(cardIncrement,newmsg="Extracting " + deck["name"] + " - " + deck["cards"][str(cardnumber)]["title"])
+			if "imageUrlBack" in deck["forgeborn"]:
+				fbBack = deck["forgeborn"]["imageUrlBack"]
+				if os.path.isfile(os.path.join(self.cacheFolder,fbBack.rsplit('/', 1)[-1])) == False:
+					with Image.open(fbBack) as fbBack:
+						if pDialog:
+							pDialog.Update(cardIncrement,newmsg="Extracting " + deck["name"] + " - " + deck["cards"][str(cardnumber)]["name"])
 
-		#		card_name = deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["title"] + " Back.jpg"
-				
-		#		fbBack.save(os.path.join(imagePath,card_name))
+						card_name = deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"]["name"] + " Back.jpg"
+						
+						fbBack.save(os.path.join(imagePath,card_name))
 
 	def generateDeckNavigator(self, out_path, images=False, overview=True):
 		template_file = ""
@@ -641,7 +740,7 @@ slider.oninput = function() {
   output.innerHTML = this.value;
 }
 </script>"""
-			cards = sorted(deck["cards"].values(), key=itemgetter('cardType'))
+			cards = sorted(deck["cardList"], key=itemgetter('cardType'))
 
 			fb_name = ("images/" + deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"].get("title",deck["forgeborn"].get("name","")) + ".jpg")
 			
@@ -709,9 +808,9 @@ slider.oninput = function() {
            							<span class="hover-card">
 		   								<img src="images/%s" width="206.5" height="281"></img><img src="images-broken/%s" width="206.5" height="281"></img><img src="images/%s"width="206.5" height="281"></img>
            							</span>
-        						 </span>""" % (rarityIcon, deck["name"] + " - " + card["title"] + " - Lvl 1.jpg",
-								 deck["name"] + " - " + card["title"] + " - Lvl 2.jpg",
-								 deck["name"] + " - " + card["title"] + " - Lvl 3.jpg")
+        						 </span>""" % (rarityIcon, deck["name"] + " - " + card["name"] + " - Lvl 1.jpg",
+								 deck["name"] + " - " + card["name"] + " - Lvl 2.jpg",
+								 deck["name"] + " - " + card["name"] + " - Lvl 3.jpg")
 				else:
 					imageBlock = rarityIcon
 
@@ -725,9 +824,9 @@ slider.oninput = function() {
 										</div>
 										<div class = "lvl3">
 											<img src="../images/%s" class="tall_card"></img>
-										</div>""" % (deck["name"] + " - " + card["title"] + " - Lvl 1.jpg",
-									deck["name"] + " - " + card["title"] + " - Lvl 2.jpg",
-									deck["name"] + " - " + card["title"] + " - Lvl 3.jpg")
+										</div>""" % (deck["name"] + " - " + card["name"] + " - Lvl 1.jpg",
+									deck["name"] + " - " + card["name"] + " - Lvl 2.jpg",
+									deck["name"] + " - " + card["name"] + " - Lvl 3.jpg")
 
 				
 				if card["cardType"] == "Creature":
@@ -763,7 +862,7 @@ slider.oninput = function() {
 										"<img src='data/" + factionIcon + "' width='20' height='20'></img><span style='display: none;'>"+deck["faction"]+"</span>",
 												deck["name"],
 										"<span style='display: none;'>"+card.get("rarity","")+"</span>" + imageBlock,
-													card["title"],
+													card["name"],
 													card["cardType"],
 													card["cardSubType"],
 													card["levels"]["1"].get("attack",""),
@@ -797,7 +896,7 @@ slider.oninput = function() {
 									</tr>""" % ("<img src='data/" + factionIcon +"' width='20' height='20'></img><span style='display: none;'>"+deck["faction"]+"</span>",
 											deck["name"],
 										"<span style='display: none;'>"+card.get("rarity","")+"</span>" + imageBlock,
-													card["title"],
+													card["name"],
 													card["cardType"],
 													card["levels"]["1"].get("text",""),
 													card["levels"]["2"].get("text",""),
@@ -909,10 +1008,11 @@ slider.oninput = function() {
 
 		html = template.split("[decks]")[0]
 
-
 		for deck in self.decks:
+			#old location of card data
+			#cards = sorted(deck["cards"].values(), key=itemgetter('cardType'))
 
-			cards = sorted(deck["cards"].values(), key=itemgetter('cardType'))
+			cards = sorted(deck["cardList"], key=itemgetter('cardType'))
 
 			factionIcon = os.path.basename(self.faction_icons[deck["faction"]])
 		
@@ -941,7 +1041,7 @@ slider.oninput = function() {
 			spellTable = "<table>"
 
 			for card in cards:
-				if "crossFaction" in card:
+				if "crossFaction" in card and card.get("betrayer", False):
 					rarityIcon = "<img src='data/" + os.path.basename(self.faction_icons[card.get("crossFaction","")]) +"' width='20' height='20'></img>"
 				else:
 					rarityIcon = ""
@@ -976,7 +1076,7 @@ slider.oninput = function() {
 									</tr>""" % (
 										
 										rarityIcon,
-													card["title"],
+													card["name"],
 													card["cardSubType"],
 													card["levels"]["1"].get("attack",""),
 													card["levels"]["2"].get("attack",""),
@@ -1000,12 +1100,19 @@ slider.oninput = function() {
 											</ol>
 										</td>
 									</tr>""" % (rarityIcon,
-													card["title"],
+													card["name"],
 													card["levels"]["1"].get("text",""),
 													card["levels"]["2"].get("text",""),
 													card["levels"]["3"].get("text","")
 													)
 			html = html + creatureTable + "</table>"+ spellTable + "</table><div style='page-break-after: always'></div>"
+			
+			#if deck["Match Scores"][0]["score"] > 57:
+			#html = html + deck["Match Scores"][0]["name"] + ":" + str(deck["Match Scores"][0]["score"]) +"</div>"
+			#html = html + deck["Match Scores"][1]["name"] + ":" + str(deck["Match Scores"][1]["score"]) +"</div>"
+			#html = html + deck["Match Scores"][2]["name"] + ":" + str(deck["Match Scores"][2]["score"]) +"</div>"
+			#	print(deck["name"] + " ---> " + deck["Match Scores"][0]["name"] + ":" + str(deck["Match Scores"][0]["score"]) + ", " + deck["Match Scores"][1]["name"] + ":" + str(deck["Match Scores"][1]["score"]) + ", " + deck["Match Scores"][2]["name"] + ":" + str(deck["Match Scores"][2]["score"]))
+
 
 		with open(os.path.join(out_path,"overview.html"), "w") as deck_navigator_file:
 			deck_navigator_file.write(html)
