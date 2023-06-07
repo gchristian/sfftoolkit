@@ -1,5 +1,6 @@
 import json
 import os
+import csv
 from appdirs import user_data_dir
 from pathlib import Path
 from math import ceil
@@ -7,6 +8,8 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import landscape, letter
 from reportlab.lib.units import inch
 from PIL import Image
+from PIL import ImageChops
+
 import shutil
 import sys
 
@@ -43,21 +46,57 @@ class sffCollection(object):
 			"Uterra" : os.path.join(self.resourcePath,"uterra.png")
 		}
 
+		self.sleeved_box = os.path.join(self.resourcePath,"box_sleeved.png")
+		self.unsleeved_box = os.path.join(self.resourcePath,"box_unsleeved.png")
+
 		self.rarity_icons = {
 
-			"Common" : os.path.join(self.resourcePath,"S1_Common.png"),
-			"Common Common" : os.path.join(self.resourcePath,"S1_CommonCommon.png"),
-			"Common Rare" : os.path.join(self.resourcePath,"S1_CommonRare.png"),
-			"Rare" : os.path.join(self.resourcePath,"S1_Rare.png"),
-			"Rare Rare" : os.path.join(self.resourcePath,"S1_RareRare.png"),
-			"Rare Common" : os.path.join(self.resourcePath,"S1_RareCommon.png"),
-			"LS" : os.path.join(self.resourcePath,"S1_LS.png")
+			"s0-Common" : os.path.join(self.resourcePath,"S0_Common.png"),
+			"s0-Common Common" : os.path.join(self.resourcePath,"S0_CommonCommon.png"),
+			"s0-Common Rare" : os.path.join(self.resourcePath,"S0_CommonRare.png"),
+			"s0-Rare" : os.path.join(self.resourcePath,"S0_Rare.png"),
+			"s0-Rare Rare" : os.path.join(self.resourcePath,"S0_RareRare.png"),
+			"s0-Rare Common" : os.path.join(self.resourcePath,"S0_RareCommon.png"),
+			"s0-LS" : os.path.join(self.resourcePath,"S0_LS.png"),
+			"s0-Solbind" : os.path.join(self.resourcePath,"S0_LS.png"),
+			"s1-Common" : os.path.join(self.resourcePath,"S1_Common.png"),
+			"s1-Common Common" : os.path.join(self.resourcePath,"S1_CommonCommon.png"),
+			"s1-Common Rare" : os.path.join(self.resourcePath,"S1_CommonRare.png"),
+			"s1-Rare" : os.path.join(self.resourcePath,"S1_Rare.png"),
+			"s1-Rare Rare" : os.path.join(self.resourcePath,"S1_RareRare.png"),
+			"s1-Rare Common" : os.path.join(self.resourcePath,"S1_RareCommon.png"),
+			"s1-LS" : os.path.join(self.resourcePath,"S1_LS.png"),
+			"s1-Solbind" : os.path.join(self.resourcePath,"S1_LS.png"),
+			"s2-Common" : os.path.join(self.resourcePath,"S2_Common.png"),
+			"s2-Common Common" : os.path.join(self.resourcePath,"S2_CommonCommon.png"),
+			"s2-Common Rare" : os.path.join(self.resourcePath,"S2_CommonRare.png"),
+			"s2-Rare" : os.path.join(self.resourcePath,"S2_Rare.png"),
+			"s2-Rare Rare" : os.path.join(self.resourcePath,"S2_RareRare.png"),
+			"s2-Rare Common" : os.path.join(self.resourcePath,"S2_RareCommon.png"),
+			"s2-LS" : os.path.join(self.resourcePath,"S2_LS.png"),
+			"s2-Solbind" : os.path.join(self.resourcePath,"S2_Solbind.png"),
+			"SX-Missing" : os.path.join(self.resourcePath,"SX_Missing.png")
+		}
+
+		self.set_identification_chunks = {
+
+			"ks" : os.path.join(self.resourcePath,"set_kickstarter.jpg"),
+			"alpha" : os.path.join(self.resourcePath,"set_alpha.jpg"),
+			"wfp" : os.path.join(self.resourcePath,"set_wfp.jpg")
 		}
 
 		#load decks from cache
 		self.deckNames = []
 		self.decks = self.loadCachedDecks()
 		self.refreshStats()
+		self.scoreLabels = []
+
+	def getRarityIconForSet(self,rarity,set):
+		lookup = set + "-" + rarity
+		if lookup in self.rarity_icons:
+			return self.rarity_icons[lookup]
+
+		return self.rarity_icons["SX-Missing"]
 
 
 	def getDeckNames(self):
@@ -186,6 +225,120 @@ class sffCollection(object):
 			sfdiv.showPage()
 
 
+	def drawCardBox(self, card_boxes, deck, sleeved):
+		deckname = deck.get("name")
+		faction = deck.get("faction")
+		rarities = deck["rarities"]
+		spellCount = deck.get("spellCount",0)
+		creatureTypes =deck.get("creatureTypes",[])
+		creatureNames = deck.get("creatureNames")
+
+
+		faction_icon = self.faction_icons.get(faction,"")
+		if sleeved == 0:
+			box_template = self.unsleeved_box
+			left_margin = 5.5 * inch
+			top_margin = 1.88 * inch
+		else:
+			box_template = self.sleeved_box
+			left_margin = 5.75 * inch
+			top_margin = 1.48 * inch
+
+		card_boxes.drawImage(box_template, 0,0)
+
+
+		card_boxes.saveState()
+		card_boxes.scale(1,-1)
+
+		card_boxes.drawImage(faction_icon, left_margin - (.1 * inch), (top_margin + (.5 * inch)) * -1, preserveAspectRatio=True, mask="auto",height=.35*inch)
+
+		rarityCount = 1
+		for rarity in rarities:
+			card_boxes.drawImage(rarity, left_margin + (rarityCount * .1 * inch), (top_margin + (.38* inch)) * -1, preserveAspectRatio=True, mask="auto",height=.1*inch)
+			rarityCount = rarityCount + 1
+		card_boxes.restoreState()
+		
+		#		sfdiv.rect(box_margin, top_margin + (row * div_height), div_width, div_height, stroke=1, fill=0)
+		card_boxes.setFont("Times-Roman", 10)
+		#canvas.setFillColor(red)
+		card_boxes.drawString((inch * .62) + left_margin, (inch * .24) + top_margin,deckname)
+
+		card_boxes.setFont("Times-Roman", 8)
+		if spellCount > 0:
+			card_boxes.drawString(left_margin + (2.3 * inch), (inch * .38) + top_margin,"Spells: " + str(spellCount))
+
+		card_boxes.setFont("Times-Roman", 6)
+		fb_ability_str = " | ".join([deck["forgeborn"]["a2n"].strip(),deck["forgeborn"]["a3n"].strip(),deck["forgeborn"]["a4n"].strip()])
+		fb_ability_str = fb_ability_str.replace("Army of the Damned", "AOTD")
+		fb_ability_str = fb_ability_str.replace("the", "")
+		card_boxes.drawString(left_margin + (.62* inch), (inch * .50) + top_margin,fb_ability_str)
+
+		creatureCount = 1
+		card_boxes.setFont("Times-Roman", 8)
+		creatureStringRow1 = ""
+		creatureStringRow2 = ""
+		for creature in sorted(creatureTypes.keys()):
+			if creatureCount < 5:
+				creatureStringRow1 = creatureStringRow1 + "(" + creature + ": " + str(creatureTypes[creature]) + ")   "
+			else:
+				creatureStringRow2 = creatureStringRow2 + "("  + creature + ": " + str(creatureTypes[creature]) + ")   " 
+
+			creatureCount = creatureCount + 1
+
+
+
+		if sleeved == 0:
+			box_template = self.unsleeved_box
+			left_margin = 5.5 * inch
+			top_margin = 1.88 * inch
+			face_start = .55
+
+		else:
+			box_template = self.sleeved_box
+			left_margin = 5.75 * inch
+			top_margin = 1.48 * inch
+			face_start = .88
+
+			card_boxes.setFont("Times-Roman", 5)
+
+			creatureNames.sort(key=len)
+
+			creatureNameStringRow1 = "[" + creatureNames[4] + "]" + " [" + creatureNames[6] + "]" + " [" + creatureNames[8] + "]"
+			creatureNameStringRow2 = "[" + creatureNames[5] + "]" + " [" + creatureNames[7] + "]" + " [" + creatureNames[9] + "]"
+			creatureNameStringRow3 = "[" + creatureNames[0] + "]" + " [" + creatureNames[1] + "]" + " [" + creatureNames[2] + "]" + " [" + creatureNames[3] + "]"
+
+			card_boxes.drawString((inch * .34) + left_margin, (inch * .65) + top_margin,creatureNameStringRow1)
+			card_boxes.drawString((inch * .34) + left_margin, (inch * .73) + top_margin,creatureNameStringRow2)
+			card_boxes.drawString((inch * .34) + left_margin, (inch * .81) + top_margin,creatureNameStringRow3)
+
+
+		card_boxes.setFont("Times-Roman", 8)
+		cardCount = 0
+		cardType = ""
+
+		for card in sorted(deck.get("cardList"), key=lambda x: x['cardType']):
+			if cardType != card['cardType']:
+				cardCount = cardCount + 1
+				card_boxes.setFillColorRGB(0,0,255)
+				card_boxes.drawString((inch * .34) + left_margin, (inch * (face_start + (cardCount * .2))) + top_margin,card['cardType'] + ":")
+				cardType = card['cardType']
+				card_boxes.setFillColorRGB(0,0,0)
+
+
+			cardCount = cardCount + 1
+			subType = card.get("cardSubType","")
+			if subType == "None" or subType == "0" or subType == "":
+				subType = ""
+			else:
+				subType = " - " + subType
+
+			card_boxes.drawString((inch * .34) + left_margin, (inch * (face_start + (cardCount * .2))) + top_margin,"%s%s" % (card.get("name"), subType))
+
+		card_boxes.drawString((inch * .34) + left_margin, (inch * (face_start + ((cardCount + 2) * .2))) + top_margin,creatureStringRow1)
+		card_boxes.drawString((inch * .34) + left_margin, (inch * (face_start + ((cardCount + 3) * .2))) + top_margin,creatureStringRow2)
+		card_boxes.showPage()
+
+
 	def drawLongLabel(self, sfdiv, height, page_position, deck):
 		deckname = deck.get("name")
 		faction = deck.get("faction")
@@ -213,8 +366,18 @@ class sffCollection(object):
 
 		faction_icon = self.faction_icons.get(faction,"")
 
+
+		sfdiv.saveState()
+		sfdiv.scale(1,-1)
+		sfdiv.drawImage(faction_icon, (left_margin - (inch * .4))  + (col * div_width), (top_margin + (.3* inch) + (row * div_height)) * -1, preserveAspectRatio=True, mask="auto",height=.30*inch)
+		rarityCount = 1
+		for rarity in rarities:
+			sfdiv.drawImage(rarity, (left_margin - (inch * .3)) + (rarityCount * .1 * inch)  + (col * div_width), (top_margin + (.115 * inch) + (row * div_height) + (.165* inch)) * -1, preserveAspectRatio=True, mask="auto",height=.1*inch)
+			rarityCount = rarityCount + 1
+		sfdiv.restoreState()
+
+
 		sfdiv.rect(left_margin + (col * div_width), top_margin + (row * div_height), div_width, div_height, stroke=1, fill=0)
-		sfdiv.drawImage(faction_icon, (left_margin - (inch * .4))  + (col * div_width), top_margin + (row * div_height), preserveAspectRatio=True, mask="auto",height=.30*inch)
 		sfdiv.setFont("Times-Roman", 11)
 		#canvas.setFillColor(red)
 		sfdiv.drawString((inch * .3) + left_margin + (col * div_width), (inch * .14) + top_margin + (row * div_height),deckname)
@@ -224,10 +387,7 @@ class sffCollection(object):
 		
 
 		
-		rarityCount = 1
-		for rarity in rarities:
-			sfdiv.drawImage(rarity, (left_margin - (inch * .3)) + (rarityCount * .1 * inch)  + (col * div_width), top_margin + (row * div_height) + (.165* inch), preserveAspectRatio=True, mask="auto",height=.1*inch)
-			rarityCount = rarityCount + 1
+
 
 		sfdiv.setFont("Times-Roman", 7)
 		creatureString = ""
@@ -283,6 +443,27 @@ class sffCollection(object):
 
 
 		sfdiv.save()
+
+
+	def drawCardBoxes(self,path,sleeved):
+		
+		try:
+			card_boxes = canvas.Canvas(path,pagesize=landscape(letter), bottomup=0)
+		except IOError:
+			print("Cannot save PDF to '%s'." % path)
+			
+		decksSorted = sorted(self.decks, key=itemgetter('name'))
+
+		deckCount = 0
+
+
+		for deck in decksSorted:
+			deckCount = deckCount + 1
+			self.drawCardBox(card_boxes,deck,sleeved)
+
+
+
+		card_boxes.save()
 
 	def renderDividerPDF(self,path,height=2.9,factionDividers=False,sort=0, layout=0):
 		
@@ -364,17 +545,22 @@ class sffCollection(object):
 
 		faction_icon = self.faction_icons.get(faction,"")
 
+		sfdiv.saveState()
+		sfdiv.scale(1,-1)
+		sfdiv.drawImage(faction_icon, (box_margin - (inch * .36)), top_margin - (1.3*inch) + (row * div_height) * -1, preserveAspectRatio=True, mask="auto",height=.30*inch)
+
+		rarityCount = 1
+		for rarity in rarities:
+			sfdiv.drawImage(rarity, (box_margin - (inch * .26)) + (rarityCount * .1 * inch), (top_margin + (.265* inch) + (row * div_height)) * -1, preserveAspectRatio=True, mask="auto",height=.1*inch)
+			rarityCount = rarityCount + 1
+		sfdiv.restoreState()
 
 #		sfdiv.rect(box_margin, top_margin + (row * div_height), div_width, div_height, stroke=1, fill=0)
-		sfdiv.drawImage(faction_icon, (box_margin - (inch * .36)), top_margin + (row * div_height), preserveAspectRatio=True, mask="auto",height=.30*inch)
 		sfdiv.setFont("Times-Roman", 11)
 		#canvas.setFillColor(red)
 		sfdiv.drawString((inch * .3) + box_margin, (inch * .12) + top_margin + (row * div_height),deckname)
 
-		rarityCount = 1
-		for rarity in rarities:
-			sfdiv.drawImage(rarity, (box_margin - (inch * .26)) + (rarityCount * .1 * inch), top_margin + (row * div_height) + (.185* inch), preserveAspectRatio=True, mask="auto",height=.1*inch)
-			rarityCount = rarityCount + 1
+
 
 		sfdiv.setFont("Times-Roman", 8)
 		if spellCount > 0:
@@ -411,6 +597,86 @@ class sffCollection(object):
 		if page_position == 0:
 			sfdiv.showPage()
 
+	def drawLabelUnsleeved(self, sfdiv, page_position, deck):
+
+		#67mm x 95.5mm x 22.5mm
+		#1 inch * 2.6378
+		#.1058 between stickers
+
+
+		deckname = deck.get("name")
+		faction = deck.get("faction")
+		rarities = deck["rarities"]
+		spellCount = deck.get("spellCount",0)
+		creatureTypes =deck.get("creatureTypes",[])
+		creatureNames = deck.get("creatureNames")
+
+		div_width = 2.6378 * inch
+		div_height = .55 * inch
+
+		left_margin = 0.2875 * inch
+		top_margin = .28 * inch
+
+		if page_position == 0:
+			row = 18
+			col = 0
+			box_margin = left_margin + (col * div_width)
+		else:
+			row = ceil(page_position / 3) - 1
+			col = page_position % 3
+			if col == 0:
+				col = 0
+				box_margin = left_margin + (col * div_width)
+			else:
+				box_margin = left_margin + (col * div_width)#+(.1058 * inch * col)
+
+		faction_icon = self.faction_icons.get(faction,"")
+
+		
+		sfdiv.saveState()
+		sfdiv.scale(1,-1)
+
+#		sfdiv.rect(box_margin, top_margin + (row * div_height), div_width, div_height, stroke=1, fill=0)
+		sfdiv.drawImage(faction_icon, (box_margin - (inch * .36)), (top_margin + (.32*inch) + (row * div_height)) * -1, preserveAspectRatio=True, mask="auto",height=.30*inch)
+
+		rarityCount = 1
+		for rarity in rarities:
+			sfdiv.drawImage(rarity, (box_margin - (inch * .26)) + (rarityCount * .1 * inch), (top_margin + (row * div_height) + (.253* inch)) * -1, preserveAspectRatio=True, mask="auto",height=.1*inch)
+			rarityCount = rarityCount + 1
+		sfdiv.restoreState()
+		sfdiv.rect(left_margin + (col * div_width), top_margin + (row * div_height), div_width, div_height, stroke=1, fill=0)
+
+		sfdiv.setFont("Times-Roman", 10)
+		#canvas.setFillColor(red)
+		sfdiv.drawString((inch * .32) + box_margin, (inch * .12) + top_margin + (row * div_height),deckname)
+		sfdiv.setFont("Times-Roman", 8)
+		if spellCount > 0:
+			sfdiv.drawString(box_margin + (2.12 * inch), (inch * .10) + top_margin + (row * div_height) + (.15* inch),"Spells: " + str(spellCount))
+	
+		sfdiv.setFont("Times-Roman", 6)
+		fb_ability_str = " | ".join([deck["forgeborn"]["a2n"].strip(),deck["forgeborn"]["a3n"].strip(),deck["forgeborn"]["a4n"].strip()])
+		fb_ability_str = fb_ability_str.replace("Army of the Damned", "AOTD")
+		fb_ability_str = fb_ability_str.replace("the", "")
+		sfdiv.drawString((inch * .32) + box_margin, top_margin + (row * div_height) + (.32* inch),fb_ability_str)
+
+
+
+		creatureCount = 1
+		sfdiv.setFont("Times-Roman", 6)
+		creatureStringRow1 = ""
+		creatureStringRow2 = ""
+		for creature in sorted(creatureTypes.keys()):
+			if creatureCount < 5:
+				creatureStringRow1 = creatureStringRow1 + "(" + creature + ": " + str(creatureTypes[creature]) + ")   "
+			else:
+				creatureStringRow2 = creatureStringRow2 + "("  + creature + ": " + str(creatureTypes[creature]) + ")   " 
+
+			creatureCount = creatureCount + 1
+		sfdiv.drawString((inch * .05) + box_margin, top_margin + (row * div_height) + (.40* inch),creatureStringRow1)
+		sfdiv.drawString((inch * .05) + box_margin, top_margin + (row * div_height) + (.48* inch),creatureStringRow2)
+
+		if page_position == 0:
+			sfdiv.showPage()
 	# def refreshStats(self):
 	# 	for deck in self.decks:
 	# 		cardCount = 0
@@ -516,8 +782,8 @@ class sffCollection(object):
 
 				if card.get("betrayer",False):
 					rarities.append(self.faction_icons.get(card.get("crossFaction"),""))
-				if card.get("rarity","") in self.rarity_icons:
-					rarities.append(self.rarity_icons[card["rarity"]])
+				
+				rarities.append(self.getRarityIconForSet(card.get("rarity","Missing"),deck.get("cardSetId","SX")))
 				cardCount = cardCount + 1
 
 
@@ -529,10 +795,37 @@ class sffCollection(object):
 			deck["modifiers"] = modifiers
 		
 		self.decks.sort(key=itemgetter('faction', 'name'))
+
+		self.cardScoreRefresh()
+
 		#self.deckSimilarityStats()
 
-		
+
 	def renderLabelPDF(self,path):
+		
+		try:
+			sfdiv = canvas.Canvas(path, pagesize=letter, bottomup=0)
+		except IOError:
+			print("Cannot save PDF to '%s'." % path)
+			
+		decksSorted = sorted(self.decks, key=itemgetter('name'))
+
+		decksSorted = sorted(decksSorted, key=itemgetter('faction'))
+
+		deckCount = 0
+
+		#background =  os.path.join(self.resourcePath,"5160.png")
+		#sfdiv.drawImage(background,0,11)
+
+		for deck in decksSorted:
+			deckCount = deckCount + 1
+			
+			self.drawLabelUnsleeved(sfdiv,deckCount % 57, deck)
+
+
+		sfdiv.save()
+
+	def renderLabelPDFSleeved(self,path):
 		
 		try:
 			sfdiv = canvas.Canvas(path, pagesize=letter, bottomup=0)
@@ -555,26 +848,59 @@ class sffCollection(object):
 
 
 		sfdiv.save()
-
-
-	def missingImages(self):
+	def missingFBBacks(self):
 		links = []
 		for deck in self.decks:
-			cards = deck["imageUrl"]
-			fbFront = deck["forgeborn"]["imageUrl"]
-			if "imageUrlBack" in deck["forgeborn"]:
-				fbBack = deck["forgeborn"]["imageUrlBack"]
-				if os.path.isfile(os.path.join(self.cacheFolder,fbBack.rsplit('/', 1)[-1])) == False:
-					links.append((fbBack,os.path.join(self.cacheFolder,fbBack.rsplit('/', 1)[-1])))
+			fbBack = "https://sfwmedia11453-main.s3.amazonaws.com/public/cards/"+deck["id"]+"_fb_back.jpg"
+			if os.path.isfile(os.path.join(self.cacheFolder,fbBack.rsplit('/', 1)[-1])) == False:
+				links.append((fbBack,os.path.join(self.cacheFolder,fbBack.rsplit('/', 1)[-1])))
+	
+		return links
+	
+	def findKickstarterDecks(self):
+		checkImg = Image.open(os.path.join(self.resourcePath,"set_kickstarter.jpg"))
+		checkImgb = Image.open(os.path.join(self.resourcePath,"set_kickstarterb.jpg"))
+		
+		for deck in self.decks:
+			if deck["cardSetId"] == "s1":
+				with Image.open(os.path.join(self.cacheFolder,deck["id"]+"_fb_back.jpg")) as deck_image:
+					cropped_image = deck_image.crop((520,900,610,930))
+					cropped_image.save(os.path.join(self.cacheFolder,deck["id"]+"setcheck.jpg"))
+
+					sampleImg = Image.open(os.path.join(self.cacheFolder,deck["id"]+"setcheck.jpg"))
 
 
-			if os.path.isfile(os.path.join(self.cacheFolder,cards.rsplit('/', 1)[-1])) == False:
-				links.append((cards,os.path.join(self.cacheFolder,cards.rsplit('/', 1)[-1])))
+					if not ImageChops.difference(sampleImg, checkImg).getbbox():
+						deck["cardSetId"] = "s0"
+					elif not ImageChops.difference(sampleImg, checkImgb).getbbox():
+						deck["cardSetId"] = "s0"
+		self.refreshStats()
+
+	def missingImages(self, incCards=True):
+		links = []
+		for deck in self.decks:
+			fbBack = "https://sfwmedia11453-main.s3.amazonaws.com/public/cards/"+deck["id"]+"_fb_back.jpg"
+			fbFront = "https://sfwmedia11453-main.s3.amazonaws.com/public/cards/resized/"+deck["forgebornId"]+".jpg"
+			if os.path.isfile(os.path.join(self.cacheFolder,fbBack.rsplit('/', 1)[-1])) == False:
+				links.append((fbBack,os.path.join(self.cacheFolder,fbBack.rsplit('/', 1)[-1])))
 			
 			if os.path.isfile(os.path.join(self.cacheFolder,fbFront.rsplit('/', 1)[-1])) == False:
 				links.append((fbFront,os.path.join(self.cacheFolder,fbFront.rsplit('/', 1)[-1])))
 			
 
+			if incCards:
+				cards = deck["cardIds"]
+
+				for card in cards:
+					if os.path.isfile(os.path.join(self.cacheFolder,card + "_1.jpg")) == False:
+						links.append(("https://sfwmedia11453-main.s3.amazonaws.com/public/cards/resized/"+card+"_1.jpg",os.path.join(self.cacheFolder,card + "_1.jpg")))
+				for card in cards:
+					if os.path.isfile(os.path.join(self.cacheFolder,card + "_2.jpg")) == False:
+						links.append(("https://sfwmedia11453-main.s3.amazonaws.com/public/cards/resized/"+card+"_2.jpg",os.path.join(self.cacheFolder,card + "_2.jpg")))
+
+				for card in cards:
+					if os.path.isfile(os.path.join(self.cacheFolder,card + "_3.jpg")) == False:
+						links.append(("https://sfwmedia11453-main.s3.amazonaws.com/public/cards/resized/"+card+"_3.jpg",os.path.join(self.cacheFolder,card + "_3.jpg")))
 			
 		return links
 
@@ -791,8 +1117,8 @@ slider.oninput = function() {
 									</div>
 									<div class = "forgeborn_back">
 										<img src="../images/%s" class="tall_card"></img>
-									</div>""" % (deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"].get("title",deck["forgeborn"].get("name","")) + ".jpg",
-												deck["name"] + " - " + "Forgeborn - " + deck["forgeborn"].get("title",deck["forgeborn"].get("name","")) + " Back.jpg")
+									</div>""" % (deck["forgebornId"] + ".jpg",
+												deck["id"] + "_fb_back.jpg")
 
 			for card in cards:
 				if "crossFaction" in card:
@@ -800,7 +1126,7 @@ slider.oninput = function() {
 				else:
 					rarityIcon = ""
 				
-				rarityIcon = rarityIcon + "<img src='data/" + os.path.basename(self.rarity_icons[card.get("rarity","")]) +"' width='20' height='20'></img>"
+				rarityIcon = rarityIcon + "<img src='data/" + os.path.basename(self.getRarityIconForSet(card.get("rarity","Missing"),card.get("cardSetId","SX"))) +"' width='20' height='20'></img>"
 
 				if images:
 					imageBlock = """<span class="has-hover-card">
@@ -926,12 +1252,13 @@ slider.oninput = function() {
 
 	def halfDeckList(self, out_path):
 		with open(out_path, "w") as halfDeckListFile:
-			halfDeckListFile.write("Faction\tName\tID\tSpells\tForgeborn\tAbilities\tCreature Types\tCreature Names\n")
+			halfDeckListFile.write("Faction\tName\tID\tDate\tSpells\tForgeborn\tAbilities\tCreature Types\tCreature Names\n")
 			for deck in self.decks:
 				deckRow = []
 				deckRow.append(deck["faction"])
 				deckRow.append(deck["name"])
 				deckRow.append(deck["id"])
+				deckRow.append(deck["registeredDate"])
 				deckRow.append(deck["spellCount"])
 				deckRow.append(deck["forgeborn"].get("title",deck["forgeborn"].get("name","")))
 				deckRow.append(",".join([deck["forgeborn"]["a2n"].strip(),deck["forgeborn"]["a3n"].strip(),deck["forgeborn"]["a4n"].strip()]))
@@ -1045,9 +1372,8 @@ slider.oninput = function() {
 					rarityIcon = "<img src='data/" + os.path.basename(self.faction_icons[card.get("crossFaction","")]) +"' width='20' height='20'></img>"
 				else:
 					rarityIcon = ""
-				
 
-				rarityIcon = rarityIcon + "<img src='data/" + os.path.basename(self.rarity_icons[card.get("rarity","")]) +"' width='20' height='20'></img>"
+				rarityIcon = rarityIcon + "<img src='data/" + os.path.basename(self.getRarityIconForSet(card.get("rarity","Missing"),deck.get("cardSetId","SX"))) +"' width='20' height='20'></img>"
 
 				if card["cardType"] == "Creature":
 					creatureTable = creatureTable + """<tr>
@@ -1117,3 +1443,156 @@ slider.oninput = function() {
 		with open(os.path.join(out_path,"overview.html"), "w") as deck_navigator_file:
 			deck_navigator_file.write(html)
 			deck_navigator_file.write(template.split("[decks]")[1])
+
+	def cardScoreRefresh(self):
+		scoreLookup = {}
+		
+		with open(os.path.join(self.resourcePath,"card_scores.csv"), "r") as card_scores:
+			all_scores = csv.DictReader(card_scores)
+			for score in all_scores:
+				scoreLookup[score["id"]] = score
+				
+		self.scoreLabels = sorted(list(all_scores.fieldnames)[3:])
+
+		for deck in self.decks:
+			cardLookupIds = []
+			if "scores" not in deck:
+				deck["scores"] = {}
+
+			for cardId in deck["cardIds"]:
+				if cardId[5:] in scoreLookup:
+					cardLookupIds.append(cardId[5:])
+					if scoreLookup[cardId[5:]].get("solbind","") != "":
+						cardLookupIds.append(scoreLookup[cardId[5:]]["solbind"])
+				else:
+					unforged = cardId.replace("charge-plated","charge_plated")[5:].split("-")
+					cardLookupIds.extend(unforged)
+                    #displayName = cardLookup[modifier]["Name"] + " " + cardLookup[basecreature]["Name"];
+
+				if cardId[2] != cardId[3]:
+					deck["betrayer"] = cardId
+			for cardId in cardLookupIds:
+				all_scores = scoreLookup.get(cardId,{})
+
+				for score in list(all_scores.keys())[3:]:
+					deck["scores"][score] = deck["scores"].get(score,0) + int(all_scores[score])
+		#print(deck)
+		#self.allDeckJson("teest.html")
+		#exit()
+
+
+	def allDeckJson(self, out_path):
+		faction_color = {
+			"Uterra" : "green",
+			"Nekrium" : "purple",
+			"Alloyin" : "blue",
+			"Tempys" : "red",
+		}
+		template_file = ""
+		records = ""
+
+		with open(os.path.join(self.resourcePath,"cm.html"), "r") as template_file:
+			template = template_file.read()
+
+		with open(out_path, "w") as collectionFile:
+			searches = """[
+				{ field: 'name', label: 'Deck Name', type: 'text' },
+				{ field: 'cards', label: 'Card List', type: 'text' },
+				{
+					field: 'faction', label: 'Faction', type: 'enum', style: 'width1: 350px',
+					options: { items: ['Alloyin','Nekrium','Tempys','Uterra'] }
+				},
+				{
+					field: 'forgeborn', label: 'Forgeborn', type: 'enum', style: 'width1: 350px',
+					options: { items: ['Oros','Nova','Nix','Cercee','Sunder','Korok','Steel Rosetta','Ironbeard','Crux Colbalt'] }
+				},
+				{ field: 'sdate', label: 'Registered Date', type: 'date' }
+			]"""
+			columns = """
+						[
+				{ field: 'name', text: 'Deck Name', size: '256px', sortable: true },
+				{ field: 'cards', text: 'Card List', size: '80px', sortable: true },
+				{ field: 'fb_cycle_2', text: 'FB Cycle 2', size: '80px' },
+				{ field: 'fb_cycle_3', text: 'FB Cycle 3', size: '80px' },
+				{ field: 'fb_cycle_4', text: 'FB Cycle 4', size: '80px' },
+			"""
+			#visibleColumns = """
+			#<option value="name">Deck Name</option>
+			#<option value="cards">Card List</option>
+			#<option value="fb_cycle_2">FB Cycle 2</option>
+			#<option value="fb_cycle_3">FB Cycle 3</option>
+			#<option value="fb_cycle_4">FB Cycle 4</option>
+			#"""
+			visibleColumns = "["
+
+			scoreCount = 0
+			for score in self.scoreLabels:
+				scoreCount = scoreCount + 1
+				columns = columns + """{ field: '%s', text: '%s', size: '10px' },""" % (score, score)
+				visibleColumns = visibleColumns + """{ "recid": '%i', "name": '%s'},""" % (scoreCount, score)
+			columns = columns[:-1] + """]"""
+			visibleColumns = visibleColumns[:-1] + """]"""
+		
+
+			records = records +"["
+			deckCount = 0
+			
+			for deck in self.decks:
+				deckCount = deckCount + 1
+				deckRow = "        {"
+				deckRow = deckRow + """
+				"recid": %i, 
+				"id": "%s", 
+				"name": "%s", 
+				"faction": "%s", 
+				"cards": "%s", 
+				"forgeborn": "%s",
+				"fb_cycle_2": "%s",
+				"fb_cycle_3": "%s",
+				"fb_cycle_4": "%s",
+				"betrayer": "%s",
+				"solbind": "%s",
+				""" % (deckCount,
+				deck["id"],
+				deck["name"],
+				deck["faction"],
+				",".join(deck["creatureNames"]),
+				deck["forgeborn"].get("title",deck["forgeborn"].get("name","")),
+				deck["forgeborn"]["a2n"],
+				deck["forgeborn"]["a3n"],
+				deck["forgeborn"]["a4n"],
+				deck.get("betrayer",""),
+				deck.get("solbind",""))
+
+				for score in self.scoreLabels:
+					deckRow = deckRow + """"%s" : %i,""" % (score, deck.get("scores",{}).get(score,""))
+				
+				deckRow = deckRow +  """w2ui: { style: { name: "color: %s;" }}""" % (faction_color.get(deck["faction"]))
+
+				deckRow = deckRow + "        }"
+				if deckCount != len(self.decks):
+					deckRow = deckRow + ","
+				
+				records = records + deckRow
+					
+			records = records + "]"
+			collectionFile.write(template.replace("**COLUMNS**",columns).replace("**RECORDS**",records).replace("**SEARCHES**",searches).replace("**COLRECORDS**",visibleColumns))
+
+		with open(out_path+"fred.txt", "w") as collectionFile:
+
+			
+			for deck in self.decks:
+				collectionFile.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (deck["id"],
+				deck["name"],
+				deck["faction"],
+				",".join(deck["creatureNames"]),
+				deck["forgeborn"].get("title",deck["forgeborn"].get("name","")),
+				deck["forgeborn"]["a2n"],
+				deck["forgeborn"]["a3n"],
+				deck["forgeborn"]["a4n"],
+				deck.get("betrayer",""),
+				deck.get("solbind","")))
+
+				for score in self.scoreLabels:
+					collectionFile.write("\t%s\t%i" % (score, deck.get("scores",{}).get(score,"")))
+				collectionFile.write("\n")

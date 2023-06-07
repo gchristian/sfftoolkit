@@ -84,7 +84,7 @@ class SFFTK(sfftkPanel):
 				failed.ShowModal()
 				return
 			except Exception as e:
-				print(e)
+				print(e)	
 				failed = wx.MessageDialog(self, "Response from server not what we expected. " + r.content.decode("utf-8") , caption="Failed to add Deck")
 				failed.ShowModal()
 				return
@@ -233,6 +233,19 @@ class SFFTK(sfftkPanel):
 											layout=self.layoutChoiceCtrl.GetSelection()
 											)
 
+	def createBoxes( self, event ):
+		with wx.FileDialog(self, "Save Card Box PDF file as",
+                       style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,wildcard="PDF files (*.pdf)|*.pdf") as fileDialog:
+
+			if fileDialog.ShowModal() == wx.ID_CANCEL:
+				return
+
+			saveAsPath = fileDialog.GetPath()
+			
+			if "pdf" not in pathlib.Path(saveAsPath).suffix:
+				saveAsPath = saveAsPath + ".pdf"
+
+			self.collection.drawCardBoxes(saveAsPath,self.boxChoiceCtrl.GetSelection())
 
 	def createLabels( self, event ):
 		with wx.FileDialog(self, "Save divider PDF file as",
@@ -248,9 +261,10 @@ class SFFTK(sfftkPanel):
 
 			if self.labelChoiceCtrl.GetSelection() == 1:
 				self.collection.renderLongLabelPDF(saveAsPath)
-			else:
+			elif self.labelChoiceCtrl.GetSelection() == 2:
 				self.collection.renderLabelPDF(saveAsPath)
-
+			else:
+				self.collection.renderLabelPDFSleeved(saveAsPath)
 
 	def createDeckNavigator( self, event ):
 		destination_path=""
@@ -268,18 +282,22 @@ class SFFTK(sfftkPanel):
 		pDialog.SetMinSize((600,-1))
 
 		if self.imagesCtrl.Value:
-			self.downloadMissingAssets(pDialog=pDialog)
+			#self.downloadMissingAssets(pDialog=pDialog,downloadTuples = self.collection.missingImages())
+			#self.collection.parseCardsFromDeckImages(destination_path,pDialog=pDialog)
 
-			self.collection.parseCardsFromDeckImages(destination_path,pDialog=pDialog)
+			self.collection.missingFBBacks()
+			self.collection.findKickstarterDecks()
+
 
 			pDialog.Destroy()
 
 		self.collection.generateDeckNavigator(destination_path,images=self.imagesCtrl.GetValue(),overview=self.overviewCtrl.GetValue())
 
+	def kickstarterParse( self, event ):
+		self.collection.missingFBBacks()
+		self.collection.findKickstarterDecks(downloadTuples = self.collection.missingImages())
 
-	def downloadMissingAssets(self, pDialog):
-
-		downloadTuples = self.collection.missingImages()
+	def downloadMissingAssets(self, pDialog=None, downloadTuples=None):
 
 		for dt in downloadTuples:
 			if pDialog:
@@ -293,6 +311,23 @@ class SFFTK(sfftkPanel):
 					file.write(response.content)
 			except:
 				print("error downloading " + dt[0] + " to " + dt[1])
+
+	# def downloadMissingAssets(self, pDialog):
+
+	# 	downloadTuples = self.collection.missingImages()
+
+	# 	for dt in downloadTuples:
+	# 		if pDialog:
+	# 			if pDialog.WasCancelled():
+	# 				return
+	# 		if pDialog:
+	# 			pDialog.Update(0,newmsg="Downloading " +  dt[0])
+	# 		try:
+	# 			response = requests.get(dt[0])
+	# 			with open(dt[1], "wb") as file:
+	# 				file.write(response.content)
+	# 		except:
+	# 			print("error downloading " + dt[0] + " to " + dt[1])
 				
 	def deleteSelectedDecks( self, event ):
 		checkedDecks = self.deckListCtrl.GetCheckedItems()
@@ -318,6 +353,9 @@ class MainFrame(wx.Frame):
 		self.aboutItem = wx.MenuItem( self.sfftkMenu, wx.ID_ABOUT, u"About", wx.EmptyString, wx.ITEM_NORMAL )
 		self.sfftkMenu.Append( self.aboutItem )
 
+		self.kickstarterItem = wx.MenuItem( self.sfftkMenu, wx.ID_ANY, u"Convert KS Decks", wx.EmptyString, wx.ITEM_NORMAL )
+		self.sfftkMenu.Append( self.kickstarterItem )
+
 		self.sfftkMenu.AppendSeparator()
 
 		self.quiteItem = wx.MenuItem( self.sfftkMenu, wx.ID_EXIT, u"Quit"+ u"\t" + u"CTRL-Q", wx.EmptyString, wx.ITEM_NORMAL )
@@ -333,7 +371,8 @@ class MainFrame(wx.Frame):
 		# Connect Events
 		self.Bind( wx.EVT_MENU, self.showAbout, id = self.aboutItem.GetId() )
 		self.Bind( wx.EVT_MENU, self.onQuit, id = self.quiteItem.GetId() )
-	
+		self.Bind( wx.EVT_MENU, self.kickstarterParse, id = self.kickstarterItem.GetId() )
+
 	def OnClose(self, event):
 		self.panel.saveDefaults()
 		event.Skip()
@@ -364,6 +403,11 @@ class MainFrame(wx.Frame):
 
 	def onQuit(self, event):
 		self.Close()
+
+	def kickstarterParse( self, event ):
+		self.panel.downloadMissingAssets(downloadTuples = self.panel.collection.missingFBBacks())
+		self.panel.collection.findKickstarterDecks()
+		print("did it")
 
 
 if __name__ == '__main__':

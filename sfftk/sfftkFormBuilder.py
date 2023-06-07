@@ -26,6 +26,9 @@ class sfftkMainFrame ( wx.Frame ):
 		self.aboutItem = wx.MenuItem( self.sfftkMenu, wx.ID_ABOUT, u"About", wx.EmptyString, wx.ITEM_NORMAL )
 		self.sfftkMenu.Append( self.aboutItem )
 
+		self.kickstarterItem = wx.MenuItem( self.sfftkMenu, wx.ID_NONE, u"Convert KS Decks", wx.EmptyString, wx.ITEM_NORMAL )
+		self.sfftkMenu.Append( self.kickstarterItem )
+
 		self.sfftkMenu.AppendSeparator()
 
 		self.quiteItem = wx.MenuItem( self.sfftkMenu, wx.ID_EXIT, u"Quit"+ u"\t" + u"CTRL-Q", wx.EmptyString, wx.ITEM_NORMAL )
@@ -40,6 +43,7 @@ class sfftkMainFrame ( wx.Frame ):
 
 		# Connect Events
 		self.Bind( wx.EVT_MENU, self.showAbout, id = self.aboutItem.GetId() )
+		self.Bind( wx.EVT_MENU, self.kickstarterParse, id = self.kickstarterItem.GetId() )
 		self.Bind( wx.EVT_MENU, self.onQuit, id = self.quiteItem.GetId() )
 
 	def __del__( self ):
@@ -48,6 +52,9 @@ class sfftkMainFrame ( wx.Frame ):
 
 	# Virtual event handlers, override them in your derived class
 	def showAbout( self, event ):
+		event.Skip()
+
+	def kickstarterParse( self, event ):
 		event.Skip()
 
 	def onQuit( self, event ):
@@ -130,7 +137,7 @@ class sfftkPanel ( wx.Panel ):
 
 		dividerFirstHSizer.Add( self.HeightLbl, 0, wx.ALL, 5 )
 
-		self.heightCtrl = wx.SpinCtrlDouble( self.SFFDividerPage, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.SP_ARROW_KEYS, 2.5, 3.3, 2.900000, 0.05 )
+		self.heightCtrl = wx.SpinCtrlDouble( self.SFFDividerPage, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.SP_ARROW_KEYS, 2.5, 3.3, 2.750000, 0.05 )
 		self.heightCtrl.SetDigits( 2 )
 		self.heightCtrl.SetToolTip( u"Height of the printed divider - can be a value between 2.5 and 3.3" )
 
@@ -175,7 +182,7 @@ class sfftkPanel ( wx.Panel ):
 		self.SFFLabels = wx.Panel( self.sfftkTab, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		labelMainSizer = wx.BoxSizer( wx.VERTICAL )
 
-		labelChoiceCtrlChoices = [ u"Top: Avery 5160 - 1 x 2-5/8", u"Side: Custom - .8 x 3.75" ]
+		labelChoiceCtrlChoices = [ u"Sleeved Top: Avery 5160 - 1 x 2-5/8", u"Sleeved Side: Custom - .8 x 3.75", u"Unsleeved Top: .6 x 2.5" ]
 		self.labelChoiceCtrl = wx.Choice( self.SFFLabels, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, labelChoiceCtrlChoices, 0 )
 		self.labelChoiceCtrl.SetSelection( 0 )
 		labelMainSizer.Add( self.labelChoiceCtrl, 0, wx.ALL, 5 )
@@ -198,6 +205,32 @@ class sfftkPanel ( wx.Panel ):
 		self.SFFLabels.Layout()
 		labelMainSizer.Fit( self.SFFLabels )
 		self.sfftkTab.AddPage( self.SFFLabels, u"Labels", False )
+		self.SFFBoxes = wx.Panel( self.sfftkTab, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		boxMainSizer = wx.BoxSizer( wx.VERTICAL )
+
+		boxChoiceCtrlChoices = [ u"Unsleeved", u"Sleeved" ]
+		self.boxChoiceCtrl = wx.Choice( self.SFFBoxes, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, boxChoiceCtrlChoices, 0 )
+		self.boxChoiceCtrl.SetSelection( 0 )
+		boxMainSizer.Add( self.boxChoiceCtrl, 0, wx.ALL, 5 )
+
+		boxLabelHSizer = wx.BoxSizer( wx.HORIZONTAL )
+
+
+		boxLabelHSizer.Add( ( 0, 0), 1, wx.EXPAND, 5 )
+
+		self.createBoxBtn = wx.Button( self.SFFBoxes, wx.ID_ANY, u"Create", wx.DefaultPosition, wx.DefaultSize, 0 )
+
+		self.createBoxBtn.SetBitmapPosition( wx.RIGHT )
+		boxLabelHSizer.Add( self.createBoxBtn, 0, wx.ALL, 5 )
+
+
+		boxMainSizer.Add( boxLabelHSizer, 1, wx.EXPAND, 5 )
+
+
+		self.SFFBoxes.SetSizer( boxMainSizer )
+		self.SFFBoxes.Layout()
+		boxMainSizer.Fit( self.SFFBoxes )
+		self.sfftkTab.AddPage( self.SFFBoxes, u"Card Box", False )
 		self.SFFDeckNavigator = wx.Panel( self.sfftkTab, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		navigatorMainSizer = wx.BoxSizer( wx.VERTICAL )
 
@@ -207,6 +240,8 @@ class sfftkPanel ( wx.Panel ):
 
 		self.imagesCtrl = wx.CheckBox( self.SFFDeckNavigator, wx.ID_ANY, u"Include Card Images", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.imagesCtrl.SetValue(True)
+		self.imagesCtrl.Hide()
+
 		navigatorMainSizer.Add( self.imagesCtrl, 0, wx.ALL, 5 )
 
 		buttonHSizer2 = wx.BoxSizer( wx.HORIZONTAL )
@@ -245,6 +280,7 @@ class sfftkPanel ( wx.Panel ):
 		self.deleteDeckBtn.Bind( wx.EVT_BUTTON, self.deleteSelectedDecks )
 		self.createDivBtn.Bind( wx.EVT_BUTTON, self.createDividers )
 		self.createLabelBtn.Bind( wx.EVT_BUTTON, self.createLabels )
+		self.createBoxBtn.Bind( wx.EVT_BUTTON, self.createBoxes )
 		self.deckNavBtn.Bind( wx.EVT_BUTTON, self.createDeckNavigator )
 
 	def __del__( self ):
@@ -268,6 +304,9 @@ class sfftkPanel ( wx.Panel ):
 		event.Skip()
 
 	def createLabels( self, event ):
+		event.Skip()
+
+	def createBoxes( self, event ):
 		event.Skip()
 
 	def createDeckNavigator( self, event ):
